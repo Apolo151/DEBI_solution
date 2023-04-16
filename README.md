@@ -33,3 +33,9 @@ roslaunch turtlebot3_manipulation_moveit_config moveit_rviz.launch
 
 
 ### Run Solution Packages
+
+**Robot Control package**
+
+```bash
+rosrun move_robot move_robot.py
+```
