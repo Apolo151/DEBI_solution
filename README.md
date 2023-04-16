@@ -1,4 +1,4 @@
-###### This repo contains our team's solution for the DEBI roboitcs challenge
+##### This repo contains our team's solution for the DEBI roboitcs challenge
 
 ## How to run simulator 
 **Install Dependencies**
