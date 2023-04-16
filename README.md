@@ -1,5 +1,5 @@
 ##### This repo contains our team's solution for the DEBI roboitcs challenge
-
+[Competition Guide](https://drive.google.com/file/d/1BXq8UASasAKcVyFiAwk3sP4nw0m5puhp/view)
 ## How to run simulator 
 **Install Dependencies**
 
