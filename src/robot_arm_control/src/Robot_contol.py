@@ -312,13 +312,13 @@ gripper_group=RobotControl(group_name="gripper")
 TransformationCalculator=frames_transformations()
 
 def OpenGripper(speed=0.1,acceleration=0.1):
-    gripper_group.gripper_control([0.03,0.03],speed,acceleration) #open the gripper
+    gripper_group.gripper_control([0.019,0.019],speed,acceleration) #open the gripper
 
 def CloseGripper(speed=0.1,acceleration=0.1):
-    gripper_group.gripper_control([0.017,0.017],speed,acceleration) #open the gripper
+    gripper_group.gripper_control([0.002,0.002],speed,acceleration) #open the gripper
 
 def DownToGo(speed=0.1,acceleration=0.1):
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.12,0.000,0.045,0.0,1.57,0.0])
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.108,0.000,0.025,0.0,1.57,0.0])
     pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
     arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
 
@@ -328,17 +328,21 @@ def UpToGo(speed=0.1,acceleration=0.1):
     arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
 
 def SideToGo(speed=0.1,acceleration=0.1):
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[-0.08,0.21,0.045,0.0,1.57,1.57])
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[-0.08,0.19,0.025,0.0,1.57,1.57])
     pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
     arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
 
 def UpAndShoot():
     OpenGripper(speed=0.1,acceleration=0.1)
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[-0.08,0.22,0.025,0.0,1.57,1.57])
+    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
+    arm_group.go_to_pose_goal_cartesian(pose,1,1)
     joint_pos=arm_group.get_joint_state()
-    arm_group.go_by_joint_angle([joint_pos[0],joint_pos[1]+math.radians(-20),joint_pos[2],joint_pos[3]],0.1,0.1,angle_is_degree=False)
+    arm_group.go_by_joint_angle([joint_pos[0],joint_pos[1]+math.radians(-20),joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
     joint_pos=arm_group.get_joint_state()
-    arm_group.go_by_joint_angle([joint_pos[0]+math.radians(30),joint_pos[1],joint_pos[2],joint_pos[3]],0.1,0.1,angle_is_degree=False)
+    arm_group.go_by_joint_angle([joint_pos[0]+math.radians(30),joint_pos[1],joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
     joint_pos=arm_group.get_joint_state()
-    arm_group.go_by_joint_angle([joint_pos[0],joint_pos[1]+math.radians(20),joint_pos[2],joint_pos[3]],0.1,0.1,angle_is_degree=False)
+    arm_group.go_by_joint_angle([joint_pos[0],joint_pos[1]+math.radians(20),joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
     joint_pos=arm_group.get_joint_state()
+    CloseGripper(speed=1,acceleration=1)
     arm_group.go_by_joint_angle([joint_pos[0]+math.radians(-30),joint_pos[1],joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
