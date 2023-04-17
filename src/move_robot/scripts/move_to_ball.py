@@ -7,20 +7,12 @@ from tf.transformations import euler_from_quaternion
 from differential_robot import DifferentialRobot
 import math
 
-
-global pump_distance, push_distance
-#pump_distance = 0.20
-push_distance = 0.00
-
 # define ball coordinates
 balls_coors = []
 
-balls_coors.append([0.861900+0.258880+push_distance, -0.319573]) # red ball
-balls_coors.append([0.973150+0.258880+push_distance, 0.196194]) # green ball
-balls_coors.append([0.968200+0.258880+push_distance, -0.758848]) # blue ball
-
-
-
+balls_coors.append([0.861900+0.258880, -0.319573]) # red ball
+#balls_coors.append([0.973150+0.258880, 0.196194]) # green ball
+#balls_coors.append([0.968200+0.258880, -0.758848]) # blue ball
 
 def odom_callback(odom_msg):
     # Update current position and orientation of the robot
@@ -59,7 +51,7 @@ def go_to_ball(goal_x, goal_y):
 
 
     # Initialize variables
-    linear_velocity = 0.3
+    linear_velocity = 0.7
     angular_velocity = 0.6
     scan_range = 0.5
     min_scan_distance = float('inf')
@@ -83,28 +75,24 @@ def go_to_ball(goal_x, goal_y):
     
     '''move the robot'''
     # alter robot orientation to face the ball
-    while abs(angle()) >= 0.01*math.pi:
+    while abs(angle()) >= 0.02*math.pi:
         vel_msg.linear.x = 0
         vel_msg.angular.z = angular(angular_velocity)
         print(vel_msg.angular.z)
         # Publish the velocity message
         velocity_pub.publish(vel_msg)
 
-    vel_msg.linear.x = 0
+    vel_msg.linear.x = 0.03
     vel_msg.angular.z = 0
     velocity_pub.publish(vel_msg)
-    rospy.sleep(0.3)
+    rospy.sleep(1)
     
-    # move and pump the ball
-    while distance() >= 0.14:
+    # move towards the ball
+    while distance() >= 0.16:
         #print("goal_x: {}, goal_y: {}".format(goal_x, goal_y))
-        #if distance() <= pump_distance:
-            #vel_msg.linear.x = linear(linear_velocity)*1.3
-            #print("I am within pump distance")
-        #else:
         vel_msg.linear.x = linear(linear_velocity)
         #print("I am still not within pump distance")   
-        vel_msg.angular.z = 0
+        vel_msg.angular.z = angular(angular_velocity)
         # Publish the velocity message
         velocity_pub.publish(vel_msg)
         print("MOVING NOW")
@@ -117,14 +105,11 @@ def go_to_ball(goal_x, goal_y):
     rospy.sleep(0.1)
     
 
-
 if __name__ == '__main__':
     try:
         for ball in balls_coors:
             go_to_ball(ball[0], ball[1])
-            #return to origin
-            go_to_ball(0, 0)
         rospy.spin()
         
-    except rospy.ROSInterruptException:
-        pass
+    except Exception as e:
+        print(e)

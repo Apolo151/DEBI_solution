@@ -273,7 +273,7 @@
         <collision name='Wall_23_Collision'>
           <geometry>
             <box>
-              <size>3.25 0.15 0</size>
+              <size>3.25 0.055 0</size>
             </box>
           </geometry>
           <pose>0 0 0.0025 0 -0 0</pose>
@@ -295,7 +295,7 @@
           <pose>0 0 0.0025 0 -0 0</pose>
           <geometry>
             <box>
-              <size>3.25 0.15 0</size>
+              <size>3.25 0.055 0</size>
             </box>
           </geometry>
           <material>

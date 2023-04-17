@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 import copy
 import rospy
@@ -315,7 +317,7 @@ def OpenGripper(speed=0.1,acceleration=0.1):
     gripper_group.gripper_control([0.019,0.019],speed,acceleration) #open the gripper
 
 def CloseGripper(speed=0.1,acceleration=0.1):
-    gripper_group.gripper_control([0.002,0.002],speed,acceleration) #open the gripper
+    gripper_group.gripper_control([0.000,0.000],speed,acceleration) #open the gripper
 
 def DownToGo(speed=0.1,acceleration=0.1):
     TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.108,0.000,0.025,0.0,1.57,0.0])
@@ -346,3 +348,16 @@ def UpAndShoot():
     joint_pos=arm_group.get_joint_state()
     CloseGripper(speed=1,acceleration=1)
     arm_group.go_by_joint_angle([joint_pos[0]+math.radians(-30),joint_pos[1],joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
+
+
+
+if __name__=="__main__":
+    try:
+        OpenGripper(speed=0.1,acceleration=0.1)
+        DownToGo(speed=0.1,acceleration=0.1)
+        CloseGripper(speed=0.1,acceleration=0.1)
+        UpToGo(speed=0.1,acceleration=0.1)
+        SideToGo(speed=0.1,acceleration=0.1)
+        UpAndShoot()
+    except exception as e:
+        print(e)
