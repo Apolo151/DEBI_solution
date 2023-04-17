@@ -88,7 +88,7 @@ def go_to_ball(goal_x, goal_y):
     rospy.sleep(1)
     
     # move towards the ball
-    while distance() >= 0.16:
+    while distance() >= 0.14:
         #print("goal_x: {}, goal_y: {}".format(goal_x, goal_y))
         vel_msg.linear.x = linear(linear_velocity)
         #print("I am still not within pump distance")   

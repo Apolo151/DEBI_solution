@@ -320,12 +320,12 @@ def CloseGripper(speed=0.1,acceleration=0.1):
     gripper_group.gripper_control([0.000,0.000],speed,acceleration) #open the gripper
 
 def DownToGo(speed=0.1,acceleration=0.1):
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.108,0.000,0.025,0.0,1.57,0.0])
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.118,0.000,0.025,0.0,1.57,0.0])
     pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
     arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
 
 def UpToGo(speed=0.1,acceleration=0.1):
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.0,0.000,0.3,0.0,0.0,0.0])
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.118,0.000,0.2,0.0,0.0,0.0])
     pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
     arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
 
@@ -333,6 +333,35 @@ def SideToGo(speed=0.1,acceleration=0.1):
     TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[-0.08,0.19,0.025,0.0,1.57,1.57])
     pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
     arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
+
+def FrontGolf(speed=0.1,acceleration=0.1):
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.118,0.22,0.025,0.0,1.57,0.0])
+    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
+    arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
+
+def SwingArm(speed=0.1, acceleration=0.1):
+    # Define the starting and ending positions for the arm swing
+    start_pose = [0.0, 0.22, 0.025, 0.0, 1.57, 0.0]
+    end_pose = [0.1, 0.22, 0.025, 0.0, 1.57, 0.0]
+
+    # Move the arm to the starting position
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint", child_frame_name="swing_start", frame_coordinate=start_pose)
+    pose = TransformationCalculator.transform(parent_id="base_footprint", child_frame_id="swing_start")
+    arm_group.go_to_pose_goal_cartesian(pose, speed, acceleration)
+
+    # Swing the arm to the ending position
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint", child_frame_name="swing_end", frame_coordinate=end_pose)
+    pose = TransformationCalculator.transform(parent_id="base_footprint", child_frame_id="swing_end")
+    arm_group.go_to_pose_goal_cartesian(pose, speed, acceleration)
+
+    # Move the arm back to the starting position
+    pose = TransformationCalculator.transform(parent_id="base_footprint", child_frame_id="swing_start")
+    arm_group.go_to_pose_goal_cartesian(pose, speed, acceleration)
+
+    # Remove the temporary frames
+    TransformationCalculator.remove_frame("swing_start")
+    TransformationCalculator.remove_frame("swing_end")
+
 
 def UpAndShoot():
     OpenGripper(speed=0.1,acceleration=0.1)
@@ -353,11 +382,17 @@ def UpAndShoot():
 
 if __name__=="__main__":
     try:
+        # Go and pick the ball
         OpenGripper(speed=0.1,acceleration=0.1)
         DownToGo(speed=0.1,acceleration=0.1)
         CloseGripper(speed=0.1,acceleration=0.1)
         UpToGo(speed=0.1,acceleration=0.1)
-        SideToGo(speed=0.1,acceleration=0.1)
-        UpAndShoot()
+        # --Rotate the robot--
+        # Put the ball and shoot
+        DownToGo(speed=0.1,acceleration=0.1)
+        OpenGripper()
+        SwingArm()
+        #UpToGo(speed=0.1,acceleration=0.1)
+        #FrontGolf()
     except exception as e:
         print(e)

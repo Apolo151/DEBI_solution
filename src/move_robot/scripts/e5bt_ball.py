@@ -18,6 +18,7 @@ balls_coors = []
 balls_coors.append([0.861900+0.258880+push_distance, -0.319573]) # red ball
 balls_coors.append([0.973150+0.258880+push_distance, 0.196194]) # green ball
 balls_coors.append([0.968200+0.258880+push_distance, -0.758848]) # blue ball
+balls_coors.append([0.0, 0.0]) # back to home
 
 
 
@@ -66,8 +67,8 @@ def go_to_ball(goal_x, goal_y):
     vel_msg = Twist()
     
     # Define needed functions
-    def distance():
-        return ((goal_x - robot.x)**2 + (goal_y - robot.y)**2)**0.5
+    def distance(goalX=goal_x, goalY=goal_y):
+        return ((goalX - robot.x)**2 + (goalY - robot.y)**2)**0.5
 
     def linear(linear_velocity):
         linear_velocity = math.tanh(distance()) * linear_velocity
@@ -95,8 +96,8 @@ def go_to_ball(goal_x, goal_y):
     velocity_pub.publish(vel_msg)
     rospy.sleep(1)
     
-    # move and pump the ball
-    while distance() >= 0.16:
+    # move till close to the ball
+    while distance() >= 0.20:
         #print("goal_x: {}, goal_y: {}".format(goal_x, goal_y))
         vel_msg.linear.x = linear(linear_velocity)
         #print("I am still not within pump distance")   
@@ -105,14 +106,33 @@ def go_to_ball(goal_x, goal_y):
         velocity_pub.publish(vel_msg)
         print("MOVING NOW")
 
-    while distance() >= 0.09:
-        #vel_msg.linear.x = linear(linear_velocity)*0.5
-        vel_msg.linear.x = linear_velocity*0.8
+    # if adjusting for a ball, move with stidy speed
+    if goal_x==0:
+        while distance() >= 0.10:
+            #print("goal_x: {}, goal_y: {}".format(goal_x, goal_y))
+            vel_msg.linear.x = linear(linear_velocity)
+            #print("I am still not within pump distance")   
+            vel_msg.angular.z = angular(angular_velocity)
+            # Publish the velocity message
+            velocity_pub.publish(vel_msg)
+            print("MOVING NOW")
+    # else I am pushing a ball, move with higher speed
+    else:
+        while distance(1.250, goal_y) >= 0.09:
+            #vel_msg.linear.x = linear(linear_velocity)*0.5
+            vel_msg.linear.x = linear_velocity*0.8
+            vel_msg.angular.z = 0
+            # Publish the velocity message
+            velocity_pub.publish(vel_msg)
+            print("MOVING NOW")
+        
+        # Back up a bit
+        vel_msg.linear.x = -0.2*linear_velocity
         vel_msg.angular.z = 0
-        # Publish the velocity message
         velocity_pub.publish(vel_msg)
-        print("MOVING NOW")
+        rospy.sleep(1)
 
+    
     vel_msg.linear.x = 0
     vel_msg.angular.z = 0
     velocity_pub.publish(vel_msg)
@@ -130,6 +150,7 @@ if __name__ == '__main__':
             go_to_ball(ball[0], ball[1])
             #return to origin
             #go_to_ball(0, 0)
+            rospy.sleep(3)
         rospy.spin()
         
     except rospy.ROSInterruptException:
