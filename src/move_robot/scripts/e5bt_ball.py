@@ -7,17 +7,12 @@ from tf.transformations import euler_from_quaternion
 from differential_robot import DifferentialRobot
 import math
 
-
-global pump_distance, push_distance
-pump_distance = 0.00
-push_distance = 0.00
-
 # define ball coordinates
 balls_coors = []
 
-balls_coors.append([0.861900+0.258880+push_distance, -0.319573]) # red ball
-balls_coors.append([0.973150+0.258880+push_distance, 0.196194]) # green ball
-balls_coors.append([0.968200+0.258880+push_distance, -0.758848]) # blue ball
+balls_coors.append([0.861900+0.258880, -0.319573]) # red ball
+balls_coors.append([0.973150+0.258880, 0.196194]) # green ball
+balls_coors.append([0.968200+0.258880, -0.758848]) # blue ball
 balls_coors.append([0.0, 0.0]) # back to home
 
 
@@ -48,7 +43,10 @@ scan_sub = rospy.Subscriber('/scan', LaserScan, scan_callback)
 
 # Initialize variables
 robot = DifferentialRobot(0.033, 0.287)  # create DifferentialRobot object with wheel radius and distance
-global linear_velocity, angular_velocity, scan_range, min_scan_distance
+global linear_velocity, angular_velocity, scan_range, min_scan_distance, max_X
+
+# the x coordinate the robot should not pass (safe margin)
+max_X = 1.250000
 
 
 
@@ -118,7 +116,7 @@ def go_to_ball(goal_x, goal_y):
             print("MOVING NOW")
     # else I am pushing a ball, move with higher speed
     else:
-        while distance(1.250, goal_y) >= 0.09:
+        while distance(max_X, goal_y) >= 0.09:
             #vel_msg.linear.x = linear(linear_velocity)*0.5
             vel_msg.linear.x = linear_velocity*0.8
             vel_msg.angular.z = 0

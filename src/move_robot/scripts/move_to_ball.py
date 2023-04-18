@@ -39,12 +39,15 @@ scan_sub = rospy.Subscriber('/scan', LaserScan, scan_callback)
 
 # Initialize variables
 robot = DifferentialRobot(0.033, 0.287)  # create DifferentialRobot object with wheel radius and distance
-global linear_velocity, angular_velocity, scan_range, min_scan_distance
+global linear_velocity, angular_velocity, scan_range, min_scan_distance, max_X, line_x, wall_y
+
+# the x coordinate the robot should not pass (safe margin)
+MAX_X = 1.410000
+LINE_X = 1.570000
+WALL_Y = 1.410000
 
 
-
-
-def go_to_ball(goal_x, goal_y):
+def go_to_ball(goal_x, goal_y, pushing_ball = False):
     '''A GoToGoal approach to move the robot to the ball
     goal_x: ball x coordinate
     goal_y: ball y coordinate'''
@@ -65,13 +68,26 @@ def go_to_ball(goal_x, goal_y):
         linear_velocity = math.tanh(distance()) * linear_velocity
         return linear_velocity
 
-    def angle():
+    def angle(goal_x = goal_x, goal_y = goal_y):
         return (math.atan2(goal_y - robot.y, goal_x - robot.x) - robot.theta)
 
     def angular(angular_velocity):
         angular_velocity = math.tanh(angle()) * angular_velocity
         #angular_velocity = angle() * angular_velocity
         return angular_velocity
+    
+    def stop_robot():
+        vel_msg.linear.x = 0
+        vel_msg.angular.z = 0
+        velocity_pub.publish(vel_msg)
+        rospy.sleep(0.1)
+    
+    def back_up():
+        vel_msg.linear.x = -0.25*linear_velocity
+        vel_msg.angular.z = 0
+        velocity_pub.publish(vel_msg)
+        rospy.sleep(1.2)
+        stop_robot()
     
     '''move the robot'''
     # alter robot orientation to face the ball
@@ -89,26 +105,44 @@ def go_to_ball(goal_x, goal_y):
     
     # move towards the ball
     while distance() >= 0.14:
-        #print("goal_x: {}, goal_y: {}".format(goal_x, goal_y))
         vel_msg.linear.x = linear(linear_velocity)
-        #print("I am still not within pump distance")   
         vel_msg.angular.z = angular(angular_velocity)
         # Publish the velocity message
         velocity_pub.publish(vel_msg)
         print("MOVING NOW")
-
-    vel_msg.linear.x = 0
-    vel_msg.angular.z = 0
-    velocity_pub.publish(vel_msg)
+    stop_robot()
 
     # Sleep for 0.1 seconds
     rospy.sleep(0.1)
-    
+    if goal_x != 0 and pushing_ball == False:
+        # push the ball to the wall
+        go_to_ball(goal_x, WALL_Y, True)
+
+        # alter robot orientation to face the line
+        while abs(angle(LINE_X, robot.y)) >= 0.02*math.pi:
+            vel_msg.linear.x = 0
+            vel_msg.angular.z = angular(angular_velocity)
+            print(vel_msg.angular.z)
+            # Publish the velocity message
+            velocity_pub.publish(vel_msg)
+        stop_robot()
+
+        ## push ball towards the line 
+        while abs(robot.x - MAX_X) >= 0.09:
+            vel_msg.linear.x = linear_velocity*0.8
+            vel_msg.angular.z = 0
+            # Publish the velocity message
+            velocity_pub.publish(vel_msg)
+            print("MOVING NOW")
+        stop_robot()
+        # Back up a bit
+        back_up()
+
 
 if __name__ == '__main__':
     try:
         for ball in balls_coors:
-            go_to_ball(ball[0], ball[1])
+            go_to_ball(ball[0], ball[1]-0.3)
         rospy.spin()
         
     except Exception as e:
