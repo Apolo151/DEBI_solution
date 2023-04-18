@@ -3,16 +3,17 @@
 import sys
 import copy
 import rospy
-from moveit_commander import *
-import geometry_msgs.msg
-import tf2_ros
-import tf.transformations
-import math
 from std_msgs.msg import Bool
+import geometry_msgs.msg
+from moveit_commander import *
+import tf.transformations
+import tf2_ros
+import math
+
 
 class RobotControl:
     '''
-    This class contain module that facilitate the controll of the robot using moveit 
+    This class contain module that facilitate the control of the robot using moveit 
     '''
     def __init__(self,node_name="robot_control",group_name="joint_group",planner_id="RRTConnectkConfigDefault",planning_time=5.0,num_planning_attempts=10,allow_replanning=True):
         '''
@@ -157,7 +158,7 @@ class RobotControl:
         pass
     def get_joint_state(self):
         '''
-        fuctionality:
+        functionality:
             This function is used to get the robot's joints state
         --------------------
         arguments:
@@ -174,7 +175,7 @@ class RobotControl:
         return joint_state
     def get_pose(self):
         '''
-        fuctionality:
+        functionality:
             This function is used to get the robot's or the end effector
         --------------------
         arguments:
@@ -191,7 +192,7 @@ class RobotControl:
         return pose
     def get_joints_velocity(self):
         '''
-        fucntionality:
+        functionality:
             This function is used to get the current joint velocity of the robot
         --------------------
         arguments:
@@ -231,7 +232,7 @@ class frames_transformations:
         --------------------
         the constructor of the class
         --------------------
-        functioninality:
+        functionality:
             This function is used to instantiate the tf2_ros objects
         --------------------
         '''
@@ -251,7 +252,7 @@ class frames_transformations:
 
     def transform(self, parent_id, child_frame_id):
         '''
-        functioninality:
+        functionality:
             This function is used get the transform between two frames and return the pose of the child frame
         --------------------
         arguments:
@@ -313,86 +314,43 @@ arm_group=RobotControl(group_name="arm",planner_id="PRM",planning_time=10.0)
 gripper_group=RobotControl(group_name="gripper")
 TransformationCalculator=frames_transformations()
 
-def OpenGripper(speed=0.1,acceleration=0.1):
+## Define control functions
+def open_gripper(speed=0.1,acceleration=0.1):
     gripper_group.gripper_control([0.019,0.019],speed,acceleration) #open the gripper
 
-def CloseGripper(speed=0.1,acceleration=0.1):
-    gripper_group.gripper_control([0.000,0.000],speed,acceleration) #open the gripper
+def closegripper(speed=0.1,acceleration=0.1):
+    gripper_group.gripper_control([0.000,0.000],speed,acceleration) #close the gripper
 
-def DownToGo(speed=0.1,acceleration=0.1):
+# put arm in front of the robot
+def go_down(speed=0.1,acceleration=0.1):
     TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.118,0.000,0.025,0.0,1.57,0.0])
     pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
     arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
 
-def UpToGo(speed=0.1,acceleration=0.1):
+# put arm at the top of the robot
+def go_up(speed=0.1,acceleration=0.1):
     TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.118,0.000,0.2,0.0,0.0,0.0])
     pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
     arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
 
-def SideToGo(speed=0.1,acceleration=0.1):
+def go_left(speed=0.1,acceleration=0.1):
     TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[-0.08,0.19,0.025,0.0,1.57,1.57])
     pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
     arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
-
-def FrontGolf(speed=0.1,acceleration=0.1):
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.118,0.22,0.025,0.0,1.57,0.0])
-    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
-    arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
-
-def SwingArm(speed=0.1, acceleration=0.1):
-    # Define the starting and ending positions for the arm swing
-    start_pose = [0.0, 0.22, 0.025, 0.0, 1.57, 0.0]
-    end_pose = [0.1, 0.22, 0.025, 0.0, 1.57, 0.0]
-
-    # Move the arm to the starting position
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint", child_frame_name="swing_start", frame_coordinate=start_pose)
-    pose = TransformationCalculator.transform(parent_id="base_footprint", child_frame_id="swing_start")
-    arm_group.go_to_pose_goal_cartesian(pose, speed, acceleration)
-
-    # Swing the arm to the ending position
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint", child_frame_name="swing_end", frame_coordinate=end_pose)
-    pose = TransformationCalculator.transform(parent_id="base_footprint", child_frame_id="swing_end")
-    arm_group.go_to_pose_goal_cartesian(pose, speed, acceleration)
-
-    # Move the arm back to the starting position
-    pose = TransformationCalculator.transform(parent_id="base_footprint", child_frame_id="swing_start")
-    arm_group.go_to_pose_goal_cartesian(pose, speed, acceleration)
-
-    # Remove the temporary frames
-    TransformationCalculator.remove_frame("swing_start")
-    TransformationCalculator.remove_frame("swing_end")
-
-
-def UpAndShoot():
-    OpenGripper(speed=0.1,acceleration=0.1)
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[-0.08,0.22,0.025,0.0,1.57,1.57])
-    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
-    arm_group.go_to_pose_goal_cartesian(pose,1,1)
-    joint_pos=arm_group.get_joint_state()
-    arm_group.go_by_joint_angle([joint_pos[0],joint_pos[1]+math.radians(-20),joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
-    joint_pos=arm_group.get_joint_state()
-    arm_group.go_by_joint_angle([joint_pos[0]+math.radians(30),joint_pos[1],joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
-    joint_pos=arm_group.get_joint_state()
-    arm_group.go_by_joint_angle([joint_pos[0],joint_pos[1]+math.radians(20),joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
-    joint_pos=arm_group.get_joint_state()
-    CloseGripper(speed=1,acceleration=1)
-    arm_group.go_by_joint_angle([joint_pos[0]+math.radians(-30),joint_pos[1],joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
 
 
 
 if __name__=="__main__":
     try:
-        # Go and pick the ball
-        OpenGripper(speed=0.1,acceleration=0.1)
-        DownToGo(speed=0.1,acceleration=0.1)
-        CloseGripper(speed=0.1,acceleration=0.1)
-        UpToGo(speed=0.1,acceleration=0.1)
-        # --Rotate the robot--
+        # pick the ball from in front of the robot
+        open_gripper()
+        go_down()
+        closegripper()
+        go_up()
+        ##--Rotate the robot--## (TODO)
         # Put the ball and shoot
-        DownToGo(speed=0.1,acceleration=0.1)
-        OpenGripper()
-        SwingArm()
-        #UpToGo(speed=0.1,acceleration=0.1)
-        #FrontGolf()
+        go_left()
+        open_gripper()
+        ##--Shoot ball with arm--## (TODO)
     except exception as e:
         print(e)

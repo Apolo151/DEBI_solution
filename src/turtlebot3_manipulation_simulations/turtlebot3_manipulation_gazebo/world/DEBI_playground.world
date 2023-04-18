@@ -269,8 +269,8 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <link name='Wall_23'>
-        <collision name='Wall_23_Collision'>
+      <link name='MiddleLine'>
+        <collision name='MiddleLine_Collision'>
           <geometry>
             <box>
               <size>3.25 0.055 0</size>
@@ -291,7 +291,7 @@
             </friction>
           </surface>
         </collision>
-        <visual name='Wall_23_Visual'>
+        <visual name='MiddleLine_Visual'>
           <pose>0 0 0.0025 0 -0 0</pose>
           <geometry>
             <box>
@@ -303,7 +303,7 @@
               <uri>file://media/materials/scripts/gazebo.material</uri>
               <name>Gazebo/Grey</name>
             </script>
-            <ambient>0.8 0 0 1</ambient>
+            <ambient>0.99 0 0 1</ambient>
           </material>
           <meta>
             <layer>0</layer>
@@ -348,38 +348,38 @@
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
-        <link name='Wall_23'>
+        <link name='MiddleLine'>
           <pose>1.63649 0.088936 0 0 0 -1.5708</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='ball_blue'>
-        <pose>0.9682 -0.758848 0.486879 0 -0 0</pose>
+      <model name='blue_ball'>
+        <pose>0.989135 0.146911 0.459379 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>1.22708 -0.758848 0.055 0 -0 0</pose>
+          <pose>1.22708 0.146911 0.055 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='ball_green'>
-        <pose>0.97315 0.196194 0.486879 0 -0 0</pose>
+      <model name='green_ball'>
+        <pose>0.4 -0.958760 0.459379 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>1.23203 0.196194 0.055 0 -0 0</pose>
+          <pose>0.53203 -0.958760 0.055 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='ball_red'>
-        <pose>0.8619 -0.319573 0.486879 0 -0 0</pose>
+      <model name='red_ball'>
+        <pose>0.687580 1.110773 0.459379 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>1.12078 -0.319573 0.055 0 -0 0</pose>
+          <pose>1.12078 1.110773 0.055 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -406,7 +406,7 @@
         <projection_type>perspective</projection_type>
       </camera>
     </gui>
-    <model name='ball_green'>
+    <model name='green_ball'>
       <link name='link'>
         <inertial>
           <mass>0.005</mass>
@@ -508,7 +508,7 @@
       <allow_auto_disable>1</allow_auto_disable>
       <pose>0.97315 0.196194 0.476879 0 -0 0</pose>
     </model>
-    <model name='ball_red'>
+    <model name='red_ball'>
       <link name='link'>
         <inertial>
           <mass>0.005</mass>
@@ -610,7 +610,7 @@
       <allow_auto_disable>1</allow_auto_disable>
       <pose>0.8619 -0.319573 0.476879 0 -0 0</pose>
     </model>
-    <model name='ball_blue'>
+    <model name='blue_ball'>
       <link name='link'>
         <inertial>
           <mass>0.005</mass>
