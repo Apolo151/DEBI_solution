@@ -18,5 +18,8 @@ in the second terminal, run the following commands:
     $ source devel/setup.bash
     $ rosrun move_robot e5bt_ball.py
 
+> Note: make sure the file e5bt_ball.py is executable. If not, run the following command:
+    $ chmod +x e5bt_ball.py
+
 - Start the simulation in Gazebo by pressing the play button
 
