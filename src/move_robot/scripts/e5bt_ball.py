@@ -73,7 +73,7 @@ def go_to_goal(goal_x, goal_y, isball=False):
         return angular_velocity
     
     def orient_to_goal(goal_x=goal_x, goal_y=goal_y):
-        while abs(angle(goal_x, goal_y)) >= 0.015*math.pi:
+        while abs(angle(goal_x, goal_y)) >= 0.01*math.pi:
             vel_msg.linear.x = 0
             vel_msg.angular.z = angular(angular_velocity)
             # Publish the velocity message
@@ -119,7 +119,7 @@ def go_to_goal(goal_x, goal_y, isball=False):
             print("Moving with velocity: {}".format(vel_msg.linear.x))
 
         # Back up a bit after pushing the ball
-        #stop_robot()
+        stop_robot()
         back_up()
         
     # else I am adjusting for a ball, move with stidy speed
