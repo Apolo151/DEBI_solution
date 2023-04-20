@@ -75,10 +75,11 @@ def image_callback(ros_image):
     cv2.imshow("Camera Stream", gray)
     
 
-# Initialize the ROS node and the subscriber
-if __name__ == '__main__':
-    rospy.init_node("ip_camera_subscriber", anonymous=True)
+def get_circles():
+    # Initialize the ROS node and the subscriber
     sub = rospy.Subscriber("/camera/rgb/image_raw", Image, image_callback)
 
-    # Keep the ROS node running
+if __name__=="__main__":
+    rospy.init_node("ip_camera_subscriber", anonymous=True)
+    # Keep the ros node running
     rospy.spin()

@@ -137,13 +137,3 @@ def go_to_ball(goal_x, goal_y, pushing_ball = False):
         stop_robot()
         # Back up a bit
         back_up()
-
-
-if __name__ == '__main__':
-    try:
-        for ball in balls_coors:
-            go_to_ball(ball[0], ball[1]-0.3)
-        rospy.spin()
-        
-    except Exception as e:
-        print(e)
