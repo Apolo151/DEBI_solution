@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 import rospy
 from geometry_msgs.msg import Twist, PointStamped
+from std_msgs.msg import String
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from tf.transformations import euler_from_quaternion
 from differential_robot import DifferentialRobot
 import math
+from arm_control import RobotControl, frames_transformations
 #import get_circles
 
-global ROBOT_STATE
-## STATES = ["searching", "fixated", "returning"]
-ROBOT_STATE = "searching"
+global ROBOT_STATE, linear_velocity, angular_velocity, scan_range, min_scan_distance, MAX_X, LINE_X, WALL_Y
+## STATES = ["SearchingForBall", "Fixated", "PickingBall",
+#  "GoingToWall", "PlayingGolf", "ReturningBack"]
+ROBOT_STATE = "Searching"
 
 # define ball coordinates
 balls_coors = []
@@ -19,6 +22,10 @@ balls_coors.append([0, 0]) # origin
 #balls_coors.append([0.861900+0.258880, -0.319573]) # red ball
 #balls_coors.append([0.973150+0.258880, 0.196194]) # green ball
 #balls_coors.append([0.968200+0.258880, -0.758848]) # blue ball
+
+global goal_x, goal_y
+goal_x = 0.968200+258889
+goal_y = 0.146911
 
 def odom_callback(odom_msg):
     # Update current position and orientation of the robot
@@ -36,10 +43,11 @@ def scan_callback(scan_msg):
     min_scan_distance = min(scan_msg.ranges[:len(scan_msg.ranges)//3])
 
 def stop_robot():
+        global vel_msg
         vel_msg.linear.x = 0
         vel_msg.angular.z = 0
         velocity_pub.publish(vel_msg)
-        rospy.sleep(0.1)
+        rospy.sleep(0.2)
     
 def back_up():
     global vel_msg
@@ -60,59 +68,67 @@ def search_for_balls():
 def fixate_ball_in_frame(msg):
     #global ROBOT_STATE
     # middle of image is 240 in x
-    if(abs(msg.point.x-240) > 20):
-        vel_msg.linear.x = 0
-        if msg.point.x > 240: 
-            vel_msg.angular.z = math.tanh(abs(msg.point.x-240)) * angular_velocity*-1*0.1
-        else: 
-            vel_msg.angular.z = math.tanh(abs(msg.point.x-240)) * angular_velocity*0.1
-        ##
-        velocity_pub.publish(vel_msg)
-        rospy.sleep(0.01)
-    else:
-        vel_msg.linear.x = 0.2*linear_velocity
-        vel_msg.angular.z = 0
-        # Publish the velocity message
-        velocity_pub.publish(vel_msg)
-
-
-def circles_callback(msg):
-    global ROBOT_STATE
-    if ROBOT_STATE=="searching":
-        if msg.point.x != -1:
-            ROBOT_STATE = "fixated"
-            stop_robot()
-            print("fixated")
-        else:
-            search_for_balls()
-    elif ROBOT_STATE=="fixated":
-        if msg.point.x != -1:
-            print("coors: ", msg.point.x, msg.point.y)
-            fixate_ball_in_frame(msg)
-        #else:
-            #ROBOT_STATE = "searching"
-
-    
-
+    #if(abs(msg.point.x-240) > 20):
+    #vel_msg.linear.x = 0
+    if msg.point.x > 240: 
+        vel_msg.angular.z = math.tanh(abs(msg.point.x-240)) * angular_velocity*-1*0.1
+    else: 
+        vel_msg.angular.z = math.tanh(abs(msg.point.x-240)) * angular_velocity*0.1
+    ##
+    velocity_pub.publish(vel_msg)
+    rospy.sleep(0.01)
+#else:
+    vel_msg.linear.x = 0.2*linear_velocity
+    #vel_msg.angular.z = 0
+    # Publish the velocity message
+    velocity_pub.publish(vel_msg)
 
 
 # Initialize ROS node
 rospy.init_node('move_turtlebot3', anonymous=True)
+arm_group=RobotControl(group_name="arm",planner_id="PRM",planning_time=10.0)
+gripper_group=RobotControl(group_name="gripper")
+TransformationCalculator=frames_transformations()
 
-# Initialize publishers and subscribers
-velocity_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-odom_sub = rospy.Subscriber('/odom', Odometry, odom_callback)
-scan_sub = rospy.Subscriber('/scan', LaserScan, scan_callback)
-circles_sub = rospy.Subscriber('/circles_coors', PointStamped, circles_callback)
+## Define control functions
+def open_gripper(speed=0.1,acceleration=0.1):
+    gripper_group.gripper_control([0.019,0.019],speed,acceleration) #open the gripper
+
+def closegripper(speed=0.1,acceleration=0.1):
+    gripper_group.gripper_control([0.000,0.000],speed,acceleration) #close the gripper
+
+# put arm in front of the robot
+def go_down(speed=0.1,acceleration=0.1):
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.118,0.000,0.025,0.0,1.57,0.0])
+    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
+    arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
+
+# put arm at the top of the robot
+def go_up(speed=0.1,acceleration=0.1):
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.130,0.000,0.2,0.0,0.0,0.0])
+    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
+    arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
+
+def go_left(speed=0.1,acceleration=0.1):
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[-0.08,0.19,0.025,0.0,1.57,1.57])
+    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
+    arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
+
+def pick_and_validate(speed=0.1,acceleration=0.1):
+    go_down()
+    closegripper()
+    go_up()
+    return True
+
 
 # Initialize variables
 robot = DifferentialRobot(0.033, 0.287)  # create DifferentialRobot object with wheel radius and distance
-global linear_velocity, angular_velocity, scan_range, min_scan_distance, max_X, line_x, wall_y
+
 
 # the x coordinate the robot should not pass (safe margin)
 MAX_X = 1.410000
 LINE_X = 1.570000
-WALL_Y = 1.410000
+WALL_Y = 1.350000
 # Initialize variables
 linear_velocity = 0.75 # max linear velocity
 angular_velocity = 0.65 # max angular velocity
@@ -141,12 +157,8 @@ def go_to_ball(goal_x, goal_y, pushing_ball = False):
         #angular_velocity = angle() * angular_velocity
         return angular_velocity
     
-    
-    
     '''move the robot'''
     # alter robot orientation to face the ball
-
-
     while abs(angle()) >= 0.02*math.pi:
         vel_msg.linear.x = 0
         vel_msg.angular.z = angular(angular_velocity)
@@ -193,6 +205,58 @@ def go_to_ball(goal_x, goal_y, pushing_ball = False):
         stop_robot()
         # Back up a bit
         back_up()
+
+def circles_callback(msg):
+    global ROBOT_STATE
+    if ROBOT_STATE=="Searching":
+        if msg.point.x != -1:
+            ROBOT_STATE = "Fixated"
+            stop_robot()
+            fixate_ball_in_frame(msg)
+            state_pub.publish(ROBOT_STATE)
+            print("Fixated")
+        else:
+            search_for_balls()
+    elif ROBOT_STATE=="Fixated":
+        if msg.point.x != -1:
+            fixate_ball_in_frame(msg)
+            print("coors: ", msg.point.x, msg.point.y)
+            if msg.point.z > 50:
+                stop_robot()
+                ROBOT_STATE = "PickingBall"
+                state_pub.publish(ROBOT_STATE)
+                print(ROBOT_STATE)    
+        #else:
+            #ROBOT_STATE = "searching"
+    elif ROBOT_STATE=="PickingBall":
+        res = pick_and_validate()
+        if res==True:
+            back_up()
+            ROBOT_STATE = "GoingToWall"
+            state_pub.publish(ROBOT_STATE)
+    elif ROBOT_STATE=="GoingToWall":
+        if robot.y < 0:
+            go_to_ball(robot.x, -WALL_Y)
+        else:
+            go_to_ball(robot.x, WALL_Y)
+        ROBOT_STATE = "PlayingGolf"
+        state_pub.publish(ROBOT_STATE)
+    elif ROBOT_STATE=="PlayingGolf":
+        #play_golf()
+        ROBOT_STATE = "ReturningBack"
+        state_pub.publish(ROBOT_STATE)
+    else:
+        back_up()
+        ROBOT_STATE = "Searching"
+        state_pub.publish(ROBOT_STATE)
+
+
+# Initialize publishers and subscribers
+velocity_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+odom_sub = rospy.Subscriber('/odom', Odometry, odom_callback)
+scan_sub = rospy.Subscriber('/scan', LaserScan, scan_callback)
+circles_sub = rospy.Subscriber('/circles_coors', PointStamped, circles_callback)
+state_pub = rospy.Publisher('/robot_state', String, queue_size=10)
 
 if __name__=="__main__":
     try:

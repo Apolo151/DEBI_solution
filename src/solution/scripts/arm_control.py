@@ -3,12 +3,15 @@
 import sys
 import copy
 import rospy
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, String
 import geometry_msgs.msg
 from moveit_commander import *
 import tf.transformations
 import tf2_ros
 import math
+
+global arm_state
+arm_state = False
 
 
 class RobotControl:
@@ -310,9 +313,35 @@ class frames_transformations:
         self.static_broadcaster.sendTransform(frames_msg)
         rospy.sleep(0.2)
 
+#arm_group=RobotControl(group_name="arm",planner_id="PRM",planning_time=10.0)
+#gripper_group=RobotControl(group_name="gripper")
+#TransformationCalculator=frames_transformations()
+
+# Initialize ROS node
+rospy.init_node('move_turtlebot3', anonymous=True)
 arm_group=RobotControl(group_name="arm",planner_id="PRM",planning_time=10.0)
 gripper_group=RobotControl(group_name="gripper")
 TransformationCalculator=frames_transformations()
+
+## Define arm actions callback
+def arm_callback(msg):
+    if msg=="PickingBall":
+        print("I am picking the ball")
+        # pick_ball(TODO)
+    elif msg=="PlayingGolf":
+        print("I am playing golf")
+        # play_golf() (TODO)
+
+state_sub = rospy.Subscriber('/robot_state', String, arm_callback)
+
+## Define frames for actions
+DOWN_FRONT = [0.118,0.000,0.025,0.0,1.57,0.0]
+UP_ORIGIN = [0.000,0.000,0.30,0.0,0.0,0.0]
+UP_FRONT = [0.118,0.000,0.030,0.0,1.57,0.0]
+RIGHT_FRONT = [0.100, 0.100, 0.030, 0.0, 1.57, 0.0]
+LEFT_FRONT = [0.100, -0.100, 0.030, 0.0, 1.57, 0.0]
+
+
 
 ## Define control functions
 def open_gripper(speed=0.1,acceleration=0.1):
@@ -329,7 +358,7 @@ def go_down(speed=0.1,acceleration=0.1):
 
 # put arm at the top of the robot
 def go_up(speed=0.1,acceleration=0.1):
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.118,0.000,0.2,0.0,0.0,0.0])
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.000,0.000,0.3,0.0,0.0,0.0])
     pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
     arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
 
@@ -338,19 +367,49 @@ def go_left(speed=0.1,acceleration=0.1):
     pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
     arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
 
+def play_front_golf():
+    ## drop the ball
+    open_gripper(speed=0.1,acceleration=0.1)
+    joint_pos=arm_group.get_joint_state()
+    arm_group.go_by_joint_angle([0, 55,-17,58],1,1,angle_is_degree=False)
+    ## move up and left/right to orient for golf
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=UP_FRONT)
+    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
+    arm_group.go_to_pose_goal_cartesian(pose,1,1)
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=RIGHT_FRONT)
+    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
+    arm_group.go_to_pose_goal_cartesian(pose,1,1)
+    ## go down
+    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.00,0.00,-0.020,0.0,1.57,1.57])
+    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
+    arm_group.go_to_pose_goal_cartesian(pose,1,1)
+    ##
+    joint_pos=arm_group.get_joint_state()
+    arm_group.go_by_joint_angle([joint_pos[0],joint_pos[1]+math.radians(-20),joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
+    joint_pos=arm_group.get_joint_state()
+    arm_group.go_by_joint_angle([joint_pos[0]+math.radians(30),joint_pos[1],joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
+    joint_pos=arm_group.get_joint_state()
+    arm_group.go_by_joint_angle([joint_pos[0],joint_pos[1]+math.radians(20),joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
+    joint_pos=arm_group.get_joint_state()
+    closegripper(speed=1,acceleration=1)
+    arm_group.go_by_joint_angle([joint_pos[0]+math.radians(-30),joint_pos[1],joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
+def ExtendArm():
+    arm_group.go_by_joint_angle([math.radians(0),math.radians(86),math.radians(-54),math.radians(-37)],0.1,0.1,angle_is_degree=False)
 
 
-'''if __name__=="__main__":
+if __name__=="__main__":
     try:
         # pick the ball from in front of the robot
-        open_gripper()
-        go_down()
-        closegripper()
-        go_up()
+        #open_gripper()
+        #go_down()
+        #closegripper()
+        #go_up()
+        #go_down()
+        play_front_golf()
         ##--Rotate the robot--## (TODO)
         # Put the ball and shoot
-        go_left()
-        open_gripper()
+        #go_left()
+        #open_gripper()
         ##--Shoot ball with arm--## (TODO)
-    except exception as e:
-        print(e)'''
+    except Exception as e:
+        print(e)

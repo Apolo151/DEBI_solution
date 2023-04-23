@@ -7,6 +7,7 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import PointStamped
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
+import time
 
 global circles
 circles = None
@@ -84,6 +85,7 @@ def image_callback(ros_image):
         
         # Publish circles coordinates and radius
         pub.publish(circle_msg)
+        ##
         if circle_msg.point.z == -1:
             print("No circles detected")
         else:

@@ -6,7 +6,6 @@ from sensor_msgs.msg import LaserScan
 from tf.transformations import euler_from_quaternion
 from differential_robot import DifferentialRobot
 import math
-import get_circles
 
 # define ball coordinates
 balls_coors = []
@@ -102,9 +101,7 @@ def go_to_ball(goal_x, goal_y, pushing_ball = False):
     
     '''move the robot'''
     # alter robot orientation to face the ball
-    while get_circles.circles is None:
-        search_for_balls()
-    stop_robot()
+    
 
     while abs(angle()) >= 0.02*math.pi:
         vel_msg.linear.x = 0
