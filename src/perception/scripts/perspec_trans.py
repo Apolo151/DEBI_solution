@@ -17,15 +17,17 @@ def image_callback(ros_image):
 
         # Define coordinates of the 4 corners of the mapping from front view to bird's eye view
         # from top left to top right anti clockwise
-        pts1 = np.float32([[0, 255], [0, 600],
-                       [500, 600], [500, 470]])
-        pts2 = np.float32([[0, 0], [0, 600],
-                       [500, 600], [500, 600]])
+        pts1 = np.float32([[70, 256], [0, 480],
+                       [640, 480], [530, 256]])
+        pts2 = np.float32([[0, 0], [0, 480],
+                       [640, 480], [640, 0]])
         
 
         # Apply Perspective Transform Algorithm
         matrix = cv2.getPerspectiveTransform(pts1, pts2)
         result = cv2.warpPerspective(img, matrix, (500, 600))
+
+        img = img[80:500, 50:400]
 
         # Display the images
         cv2.imshow('Original', img)

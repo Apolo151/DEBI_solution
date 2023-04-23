@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import sys
 import rospy
 import cv2
 from sensor_msgs.msg import Image
@@ -15,27 +15,33 @@ def image_callback(ros_image):
         # Convert to GrayScale
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        pts1 = np.float32([[0, 260], [640, 260],
-                       [0, 400], [640, 400]])
-        pts2 = np.float32([[0, 0], [400, 0],
-                       [0, 640], [400, 640]])
+        # Define coordinates of the 4 corners of the mapping from front view to bird's eye view
+        # from top left to top right anti clockwise
+        pts1 = np.float32([[70, 256], [0, 480],
+                       [640, 480], [530, 256]])
+        pts2 = np.float32([[0, 0], [0, 480],
+                       [640, 480], [640, 0]])
+        
 
         # Apply Perspective Transform Algorithm
         matrix = cv2.getPerspectiveTransform(pts1, pts2)
         result = cv2.warpPerspective(img, matrix, (500, 600))
 
+        img = img[80:500, 50:400]
+
         # Display the images
         cv2.imshow('Original', img)
         cv2.imshow('Ball Localization', result)
         cv2.waitKey(3)
-        cv2.destroyAllWindows()
+        #cv2.destroyAllWindows()
 
     except Exception as e:
         print(e)
 
+
+if __name__ == '__main__':
     # Initialize the ROS node and the subscriber
     rospy.init_node("ip_camera_subscriber", anonymous=True)
     sub = rospy.Subscriber("/camera/rgb/image_raw", Image, image_callback)
-if __name__=="__main__":
-    # Keep the ros node running
+    # Keep the ROS node running
     rospy.spin()

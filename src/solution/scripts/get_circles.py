@@ -10,13 +10,6 @@ import numpy as np
 
 global circles
 circles = None
-BALL_RADIUS = 5.5*(10**(-2))*0.5 # meter
-FOCAL_LENGTH = 0.00304 # meter
-SENSOR_WIDTH = 2.813*(10**(-3)) # meter
-
-true_dis = ((0.968200+0.258880)**2+(0.146911)**2)**0.5
-
-rob_dis = 187.5*(10**(-3)) # distance between robot center and pi camera module
 
 
 # Define a callback function to convert the ROS message to an image and display it
@@ -25,7 +18,7 @@ def image_callback(ros_image):
         # Convert the ROS message to an image
         main_img = CvBridge().imgmsg_to_cv2(ros_image, "bgr8")
         ## Blur img
-        main_img=cv2.medianBlur(main_img, 3)
+        main_img=cv2.medianBlur(main_img,3)
         #main_img= cv2.GaussianBlur(main_img,(3,3),0)
         # Convert to grayscale
         gray=cv2.cvtColor(main_img,cv2.COLOR_BGR2GRAY)
@@ -44,24 +37,13 @@ def image_callback(ros_image):
 
         # Perform Hough Circle Transform
         global circles
-        circles=cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT,0.5,30,param1=50,param2=20,minRadius=0,maxRadius=0)
+        circles=cv2.HoughCircles(hsv_gray,cv2.HOUGH_GRADIENT,1,30,param1=50,param2=20,minRadius=0,maxRadius=0)
     
         # Detect edges using Canny
         edges = cv2.Canny(hsv_gray, 0, 180, apertureSize=3)
         
-        # Define circles msg
-        circle_msg = PointStamped()
-        circle_msg.header = ros_image.header
-        circle_msg.point.x = -1
-        circle_msg.point.y = -1
-        circle_msg.point.z = -1 # Radius
         # Loop over the detected circles and draw them on the original image
         if circles is not None:
-            # set msg parameters
-            circle_msg.point.x = circles[0][0][0]
-            circle_msg.point.y = circles[0][0][1]
-            circle_msg.point.z = circles[0][0][2] # Radius
-            ## Draw circles
             circles=np.uint16(np.around(circles))
             for i in circles[0,:]:
                 cv2.circle(main_img,(i[0],i[1]),i[2],(0,255,0),2)
@@ -82,18 +64,13 @@ def image_callback(ros_image):
             y2 = int(y0 - 1000 * (a))
             cv2.line(main_img, (x1, y1), (x2, y2), (0, 0, 255), 2)'''
         
-        # Publish circles coordinates and radius
+        # Publish Image Coordinates
+        circle_msg = PointStamped()
+        circle_msg.header = ros_image.header
+        circle_msg.point.x = circles[0][0][0]
+        circle_msg.point.y = circles[0][0][1]
+        circle_msg.point.z = circles[0][0][2]
         pub.publish(circle_msg)
-        if circle_msg.point.z == -1:
-            print("No circles detected")
-        else:
-            # Calculate distance between robot and ball in Camera pixels
-            dis = ((circle_msg.point.x)**2+(circle_msg.point.y)**2)**0.5
-            # Calculate pixel to meter ratio and use it calculate distance IRL
-            distance_m = dis * BALL_RADIUS / circle_msg.point.z
-            #distance_m = FOCAL_LENGTH * SENSOR_WIDTH / radius_m
-            print("calc_dis: {}, true_dis: {}".format(distance_m+rob_dis, true_dis))
-
         # Display Images
         cv2.imshow("Main Image", main_img)
         #cv2.imshow("Camera Stream", edges)
