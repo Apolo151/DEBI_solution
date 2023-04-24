@@ -10,6 +10,8 @@ import tf.transformations
 import tf2_ros
 import math
 
+from move_to_ball import ROBOT_STATE
+
 global arm_state
 arm_state = False
 
@@ -25,7 +27,7 @@ class RobotControl:
             group_name: name of the group of joints to be controlled by moveit
         '''
         # initialize the node
-        #rospy.init_node(node_name)
+        rospy.init_node(node_name)
         # initialize moveit_commander and rospy node
         roscpp_initialize(sys.argv)
         
@@ -324,15 +326,6 @@ gripper_group=RobotControl(group_name="gripper")
 TransformationCalculator=frames_transformations()
 
 ## Define arm actions callback
-def arm_callback(msg):
-    if msg=="PickingBall":
-        print("I am picking the ball")
-        # pick_ball(TODO)
-    elif msg=="PlayingGolf":
-        print("I am playing golf")
-        # play_golf() (TODO)
-
-state_sub = rospy.Subscriber('/robot_state', String, arm_callback)
 
 ## Define frames for actions
 DOWN_FRONT = [0.118,0.000,0.025,0.0,1.57,0.0]
@@ -396,20 +389,31 @@ def play_front_golf():
 def ExtendArm():
     arm_group.go_by_joint_angle([math.radians(0),math.radians(86),math.radians(-54),math.radians(-37)],0.1,0.1,angle_is_degree=False)
 
+def pick_front_ball():
+    open_gripper()
+    go_down()
+    closegripper()
+    go_up()
+
+def arm_callback(msg):
+    global ROBOT_STATE
+    if msg=="PickingBall":
+        print("I am picking the ball")
+        # pick_ball
+        pick_front_ball()
+        ## Changing state
+        ROBOT_STATE="GoingToSideWall"
+    elif msg=="PlayingGolf":
+        print("I am playing golf")
+        # play_golf() (TODO)
+
+
+
+state_sub = rospy.Subscriber('/robot_state', String, arm_callback)
 
 if __name__=="__main__":
-    try:
-        # pick the ball from in front of the robot
-        #open_gripper()
-        #go_down()
-        #closegripper()
-        #go_up()
-        #go_down()
+    try:    
         play_front_golf()
-        ##--Rotate the robot--## (TODO)
-        # Put the ball and shoot
-        #go_left()
-        #open_gripper()
-        ##--Shoot ball with arm--## (TODO)
+        
     except Exception as e:
         print(e)
