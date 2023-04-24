@@ -39,3 +39,20 @@ roslaunch turtlebot3_manipulation_moveit_config moveit_rviz.launch
 ```bash
 rosrun move_robot move_robot.py
 ```
+
+#### Gather Image Data
+
+```bash
+$ roslaunch solution gather_image_data.launch
+```
+
+#### Gather Distance and Radius Data
+```bash
+$ roslaunch solution gather_distance_and_radius_data.launch
+```
+#### Run Final Solution
+
+```bash
+roslaunch solution final_solution.launch
+```
+

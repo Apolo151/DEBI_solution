@@ -19,9 +19,9 @@ class ImageSaver:
             return
 
         # Save image
-        filename = rospy.get_param('~filename', 'image.jpg')
-        cv2.imwrite(filename, cv_image)
-        rospy.loginfo("Saved image to {}".format(filename))
+        #filename = rospy.get_param(, 'image.jpg')
+        cv2.imwrite(str(rospy.get_time())+"img.jpg", cv_image)
+        rospy.loginfo("Saved image to {}".format("NAME"))
         rospy.sleep(2)
 
 if __name__ == '__main__':

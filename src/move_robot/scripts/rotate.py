@@ -30,9 +30,11 @@ velocity_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 odom_sub = rospy.Subscriber('/odom', Odometry, odom_callback)
 scan_sub = rospy.Subscriber('/scan', LaserScan, scan_callback)
 
+
+
 # Initialize Robot and Variables
 robot = DifferentialRobot(0.033, 0.287)  # create DifferentialRobot object with wheel radius and distance
-global linear_velocity, angular_velocity, scan_range, min_scan_distance, max_X
+global linear_velocity, angular_velocity, scan_range, min_scan_distance, max_X, vel_msg
 
 # the x-coordinate the robot should not pass (safe margin)
 max_X = 1.480000
@@ -44,9 +46,16 @@ scan_range = 0.5
 min_scan_distance = float('inf')
 vel_msg = Twist()
 
+def stop_robot():
+    global vel_msg
+    vel_msg.linear.x = 0
+    vel_msg.angular.z = 0
+    velocity_pub.publish(vel_msg)
+    rospy.sleep(0.2)
+
 def rotate():
     vel_msg.linear.x = 0
-    vel_msg.angular.z = angular_velocity
+    vel_msg.angular.z = angular_velocity*0.5
     print("Rotating with velocity: {}".format(vel_msg.angular.z))
     velocity_pub.publish(vel_msg)
     rospy.sleep(0.1)
@@ -89,12 +98,6 @@ def go_to_goal(goal_x, goal_y, isball=False):
         velocity_pub.publish(vel_msg)
         rospy.sleep(0.15)
     
-    def stop_robot():
-        vel_msg.linear.x = 0
-        vel_msg.angular.z = 0
-        velocity_pub.publish(vel_msg)
-        rospy.sleep(0.2)
-    
     def back_up():
         while distance(0, robot.y) >= 0.10:
             vel_msg.linear.x = -linear_velocity*0.5
@@ -107,6 +110,7 @@ if __name__ == '__main__':
     try:
         while not rospy.is_shutdown():
             rotate()
+        stop_robot()
         rospy.spin()
     except Exception as e:
         print(e)

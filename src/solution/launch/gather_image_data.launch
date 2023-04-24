@@ -1,0 +1,6 @@
+<launch> 
+<!-- Launch the get_circles script -->
+ <node name="image_saver_node" pkg="perception" type="get_image_data.py" output="screen"/>
+<!-- Launch rotation script-->
+    <node name="rotation" pkg="move_robot" type="rotate.py" output="screen"/>
+</launch>
