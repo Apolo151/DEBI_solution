@@ -3,14 +3,14 @@
 import sys
 import copy
 import rospy
-from std_msgs.msg import Bool, String
+from std_msgs.msg import String
 import geometry_msgs.msg
 from moveit_commander import *
 import tf.transformations
 import tf2_ros
 import math
 
-from move_to_ball import ROBOT_STATE
+#from move_to_ball import ROBOT_STATE
 
 global arm_state
 arm_state = False
@@ -319,8 +319,6 @@ class frames_transformations:
 #gripper_group=RobotControl(group_name="gripper")
 #TransformationCalculator=frames_transformations()
 
-# Initialize ROS node
-rospy.init_node('move_turtlebot3', anonymous=True)
 arm_group=RobotControl(group_name="arm",planner_id="PRM",planning_time=10.0)
 gripper_group=RobotControl(group_name="gripper")
 TransformationCalculator=frames_transformations()
@@ -338,10 +336,10 @@ LEFT_FRONT = [0.100, -0.100, 0.030, 0.0, 1.57, 0.0]
 
 ## Define control functions
 def open_gripper(speed=0.1,acceleration=0.1):
-    gripper_group.gripper_control([0.019,0.019],speed,acceleration) #open the gripper
+    gripper_group.gripper_control([0.018,0.018],speed,acceleration) #open the gripper
 
 def closegripper(speed=0.1,acceleration=0.1):
-    gripper_group.gripper_control([0.000,0.000],speed,acceleration) #close the gripper
+    gripper_group.gripper_control([-0.001,-0.001],speed,acceleration) #close the gripper
 
 # put arm in front of the robot
 def go_down(speed=0.1,acceleration=0.1):
@@ -361,22 +359,22 @@ def go_left(speed=0.1,acceleration=0.1):
     arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
 
 def play_front_golf():
+    # Go Down
+    go_down()
     ## drop the ball
     open_gripper(speed=0.1,acceleration=0.1)
+    ## back arm a bit
     joint_pos=arm_group.get_joint_state()
-    arm_group.go_by_joint_angle([0, 55,-17,58],1,1,angle_is_degree=False)
-    ## move up and left/right to orient for golf
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=UP_FRONT)
-    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
-    arm_group.go_to_pose_goal_cartesian(pose,1,1)
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=RIGHT_FRONT)
-    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
-    arm_group.go_to_pose_goal_cartesian(pose,1,1)
-    ## go down
+    arm_group.go_by_joint_angle([joint_pos[0], joint_pos[1],joint_pos[2],joint_pos[3]+math.radians(6)],1,1,angle_is_degree=False)
+    closegripper()
+    ## push ball with arm (TODO)
+    joint_pos=arm_group.get_joint_state()
+    arm_group.go_by_joint_angle([joint_pos[0], joint_pos[1],joint_pos[2],joint_pos[3]+math.radians(-75)],1,1,angle_is_degree=False)
+    '''
     TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.00,0.00,-0.020,0.0,1.57,1.57])
     pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
     arm_group.go_to_pose_goal_cartesian(pose,1,1)
-    ##
+    
     joint_pos=arm_group.get_joint_state()
     arm_group.go_by_joint_angle([joint_pos[0],joint_pos[1]+math.radians(-20),joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
     joint_pos=arm_group.get_joint_state()
@@ -385,35 +383,70 @@ def play_front_golf():
     arm_group.go_by_joint_angle([joint_pos[0],joint_pos[1]+math.radians(20),joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
     joint_pos=arm_group.get_joint_state()
     closegripper(speed=1,acceleration=1)
-    arm_group.go_by_joint_angle([joint_pos[0]+math.radians(-30),joint_pos[1],joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
+    arm_group.go_by_joint_angle([joint_pos[0]+math.radians(-30),joint_pos[1],joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)'''
 def ExtendArm():
     arm_group.go_by_joint_angle([math.radians(0),math.radians(86),math.radians(-54),math.radians(-37)],0.1,0.1,angle_is_degree=False)
 
+def go_front_gripper():
+    arm_group.go_by_joint_angle([math.radians(0),math.radians(64),math.radians(-33),math.radians(8)],0.1,0.1,angle_is_degree=False)
+
+def go_back_gripper():
+    arm_group.go_by_joint_angle([math.radians(0),math.radians(64),math.radians(-33),math.radians(62)],0.08,0.08,angle_is_degree=False)
+
+def grip_while_down():
+    arm_group.go_by_joint_angle([math.radians(0),math.radians(43),math.radians(5),math.radians(40)],0.05,0.05,angle_is_degree=False)
+
+def go_stuck_to_front_gripper():
+    arm_group.go_by_joint_angle([math.radians(0),math.radians(64),math.radians(-33),math.radians(80)],0.08,0.08,angle_is_degree=False)
 def pick_front_ball():
     open_gripper()
     go_down()
+    ## go to the front of the ball
+    go_front_gripper()
     closegripper()
-    go_up()
+    ## back to lock the ball between the arm and the robot's body (kama4a)\
+    go_back_gripper()
+    open_gripper()
+    grip_while_down()
+    #go_back_gripper()
+    #open_gripper()
+    closegripper()
+    #go_stuck_to_front_gripper()
+    #closegripper()
+    #go_up()
 
-def arm_callback(msg):
-    global ROBOT_STATE
-    if msg=="PickingBall":
-        print("I am picking the ball")
+def is_ball_picked():
+    gripper_state=gripper_group.get_gripper_state()
+    if gripper_state[1] < 0.001:
+        return False
+    else:
+        return True
+    
+
+#def arm_callback(msg):
+    #global ROBOT_STATE
+    #if msg=="PickingBall":
+        #print("I am picking the ball")
         # pick_ball
-        pick_front_ball()
+        #pick_front_ball()
         ## Changing state
-        ROBOT_STATE="GoingToSideWall"
-    elif msg=="PlayingGolf":
-        print("I am playing golf")
+        #ROBOT_STATE="GoingToSideWall"
+    #elif msg=="PlayingGolf":
+        #print("I am playing golf")
         # play_golf() (TODO)
 
 
 
-state_sub = rospy.Subscriber('/robot_state', String, arm_callback)
+#state_sub = rospy.Subscriber('/robot_state', String, arm_callback)
+#state_pub = rospy.Publisher('/robot_state', String, queue_size=10)
 
 if __name__=="__main__":
-    try:    
-        play_front_golf()
-        
+    try: 
+        pick_front_ball()
+        gripper_state = gripper_group.get_joint_state()
+        for i in range(len(gripper_state)):
+            print(gripper_state[i],end=" ")
+        #go_down()
+        #play_front_golf() 
     except Exception as e:
         print(e)

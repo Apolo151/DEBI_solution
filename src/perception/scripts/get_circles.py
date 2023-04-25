@@ -33,22 +33,38 @@ def image_callback(ros_image):
         # Convert to HSV and get gray hsv
         hsv = cv2.cvtColor(main_img, cv2.COLOR_BGR2HSV)
         hsv_gray = cv2.cvtColor(hsv, cv2.COLOR_BGR2GRAY)
-        #lower = np.array([0, 0, 0])
-        #upper = np.array([255, 60, 255])
-        #mask = cv2.inRange(hsv, lower, upper)
-        #res = cv2.bitwise_and(main_img, main_img, mask=mask)
+        walls_lower = np.array([5, 60, 61])
+        walls_upper = np.array([20, 210, 96])
+        ground_lower = np.array([0, 0, 10])
+        ground_upper = np.array([0, 0, 200])
+        #white_lower = np.array([0, 0, 255])
+        #white_upper = np.array([0, 0, 255])
+        #sky_lower = np.array([0, 0, 0])
+        #sky_upper = np.array([255, 255, 60])
+        walls_mask = cv2.inRange(hsv, walls_lower, walls_upper)
+        ground_mask = cv2.inRange(hsv, ground_lower, ground_upper)
+        #white_mask = cv2.inRange(hsv, white_lower, white_upper)
+        #sky_mask = cv2.inRange(hsv, sky_lower, sky_upper)
+        res = cv2.bitwise_and(main_img, main_img, mask=walls_mask)
+        res = cv2.bitwise_not(res)
+        res2 = cv2.bitwise_and(main_img, main_img, mask=ground_mask)
+        res2 = cv2.bitwise_not(res2)
+        res = cv2.bitwise_and(res, res2)
+        #res = cv2.bitwise_and(res, res, mask=white_mask)
         #res = cv2.bitwise_not(res)
         #res = cv2.bitwise_and(res, edges)
 
         # Perform histogram equalization using cv2.equalizeHist()
         eq_img = cv2.equalizeHist(gray)
+        edges = cv2.Canny(hsv_gray, 0, 180, apertureSize=3)
 
         # Perform Hough Circle Transform
+        res = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
         global circles
-        circles=cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT,0.5,30,param1=50,param2=20,minRadius=0,maxRadius=0)
-    
+        circles=cv2.HoughCircles(hsv_gray,cv2.HOUGH_GRADIENT,0.5,30,param1=50,param2=20,minRadius=0,maxRadius=0)
+        #circles2 =cv2.HoughCircles(eq_img,cv2.HOUGH_GRADIENT,0.5,30,param1=50,param2=20,minRadius=0,maxRadius=0)
         # Detect edges using Canny
-        edges = cv2.Canny(hsv_gray, 0, 180, apertureSize=3)
+        #edges = cv2.Canny(hsv_gray, 0, 180, apertureSize=3)
         
         # Define circles msg
         circle_msg = PointStamped()
@@ -67,6 +83,13 @@ def image_callback(ros_image):
             for i in circles[0,:]:
                 cv2.circle(main_img,(i[0],i[1]),i[2],(0,255,0),2)
                 cv2.circle(main_img,(i[0],i[1]),2,(0,0,255),3)
+
+        #if circles2 is not None:
+            ## Draw circles
+            #circles2=np.uint16(np.around(circles2))
+            #for i in circles2[0,:]:
+                #cv2.circle(main_img,(i[0],i[1]),i[2],(0,0,255),2)
+                #cv2.circle(main_img,(i[0],i[1]),2,(255,0,0),3)
 
         # Apply HoughLines function to detect lines
         #lines = cv2.HoughLines(edges, 1, np.pi/180, 200)
@@ -98,8 +121,9 @@ def image_callback(ros_image):
 
         # Display Images
         cv2.imshow("Main Image", main_img)
-        #cv2.imshow("Camera Stream", edges)
+        #cv2.imshow("HSV gray", hsv_gray)
         #cv2.imshow("hist equal", eq_img)
+        #cv2.imshow("filter result", res) # filtering background res
         cv2.waitKey(3)
     except Exception as e:
         print(e)

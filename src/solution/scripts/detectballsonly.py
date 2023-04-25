@@ -73,7 +73,6 @@ focal_length = 0.00036
 pixel_size = 0.00000112
 
 
-
 def robot_and_curve_par(threshed):
     # Get x and y coordinates of the robot
     x_pixel, y_pixel = robot_coords(threshed)
