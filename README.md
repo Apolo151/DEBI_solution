@@ -48,7 +48,7 @@ rosrun move_robot move_robot.py
 ```
 
 #### Gather Image Data
-**Three Terminals**
+**Open Three Terminals**
 
 - from the workspace directory
 ```bash
@@ -57,7 +57,7 @@ export TURTLEBOT3_MODEL=waffle_pi
 roslaunch solution gather_image_data.launch
 ```
 
-- from the directory of the script
+- from the directory of the script (DEBI_solution/src/turtlebot3_manipulation_simulations/turtlebot3_manipulation_gazebo/scripts)
 ```bash
 python3 spawn_three_balls.py
 ```
@@ -75,6 +75,7 @@ rosrun perception get_image_data.py
 #### Gather Distance and Radius Data
 **Open Two Terminals**
 
+- from the home directory
 ```bash
 source devel/setup.bash
 export TURTLEBOT3_MODEL=waffle_pi
@@ -83,6 +84,8 @@ roslaunch solution gather_distance_radius_data.launch
 - Set blue ball coordinates from simulator to (x=2.5, y=0.0)
 - Start the simulator
 
+
+- from the directory you want the .csv file to be saved to 
 ```bash
 source devel/setup.bash
 export TURTLEBOT3_MODEL=waffle_pi
@@ -97,4 +100,3 @@ source devel/setup.bash
 export TURTLEBOT3_MODEL=waffle_pi
 roslaunch solution final_solution.launch
 ```
-
