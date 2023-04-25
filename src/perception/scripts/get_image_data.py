@@ -4,6 +4,9 @@ import rospy
 import cv2
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+from datetime import datetime
+
+
 
 class ImageSaver:
     def __init__(self):
@@ -20,9 +23,11 @@ class ImageSaver:
 
         # Save image
         #filename = rospy.get_param(, 'image.jpg')
-        cv2.imwrite(str(rospy.get_time())+"img.jpg", cv_image)
+        now = datetime.now()
+        current_time = now.strftime("%H:%M:%S")
+        cv2.imwrite(current_time+"_img.jpg", cv_image)
         rospy.loginfo("Saved image to {}".format("NAME"))
-        rospy.sleep(2)
+        rospy.sleep(0.5)
 
 if __name__ == '__main__':
     image_saver = ImageSaver()
