@@ -130,7 +130,7 @@ def image_callback(ros_image):
     
 # Define Subs and Pubs
 rospy.init_node("ip_camera_subscriber", anonymous=True)
-pub = rospy.Publisher("circles_coors", PointStamped, queue_size=10)
+pub = rospy.Publisher("circles_coors", PointStamped, queue_size=1)
 sub = rospy.Subscriber("/camera/rgb/image_raw", Image, image_callback)
 
 if __name__=="__main__":

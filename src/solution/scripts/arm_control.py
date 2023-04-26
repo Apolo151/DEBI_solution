@@ -404,15 +404,12 @@ def pick_front_ball():
     ## go to the front of the ball
     go_front_gripper()
     closegripper()
-    ## back to lock the ball between the arm and the robot's body (kama4a)\
+    ## push back to lock the ball between the arm and the robot's body (kama4a)
     go_back_gripper()
+    # Open gripper and lock on ball
     open_gripper()
     grip_while_down()
-    #go_back_gripper()
-    #open_gripper()
     closegripper()
-    #go_stuck_to_front_gripper()
-    #closegripper()
     #go_up()
 
 def is_ball_picked():
@@ -445,7 +442,7 @@ if __name__=="__main__":
         pick_front_ball()
         gripper_state = gripper_group.get_joint_state()
         for i in range(len(gripper_state)):
-            print(gripper_state[i],end=" ")
+           print(gripper_state[i],end=" ")
         #go_down()
         #play_front_golf() 
     except Exception as e:

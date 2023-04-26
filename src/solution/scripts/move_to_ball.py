@@ -7,13 +7,17 @@ from sensor_msgs.msg import LaserScan
 from tf.transformations import euler_from_quaternion
 from differential_robot import DifferentialRobot
 import math
+from arm_control import *
 
 global ROBOT_STATE, linear_velocity, angular_velocity, scan_range, min_scan_distance, MAX_X, LINE_X, WALL_Y
-global goal_x, goal_y, CAM_MID_X, STOP_RADIUS
+global goal_x, goal_y, CAM_MID_X, STOP_RADIUS, LAST_RADIUS, FLUSH_BALL
+
 goal_x = 2.700000
 goal_y = 0.0
 CAM_MID_X = 320
-STOP_RADIUS = 75
+STOP_RADIUS = 80
+LAST_RADIUS = -1
+FLUSH_BALL = False
 
 ROBOT_STATE = "Searching"
 ## STATES = ["SearchingForBall", "Fixated", "PickingBall",
@@ -22,7 +26,7 @@ ROBOT_STATE = "Searching"
 # Initialize variables
 MAX_X = 1.410000 # the x coordinate the robot should not pass (safe margin)
 LINE_X = 1.570000
-WALL_Y = 1.350000
+WALL_Y = 1.320000
 linear_velocity = 0.75 # max linear velocity
 angular_velocity = 0.65 # max angular velocity
 scan_range = 0.5
@@ -36,12 +40,12 @@ balls_coors.append([0, 0]) # origin
 #balls_coors.append([0.973150+0.258880, 0.196194]) # green ball
 #balls_coors.append([0.968200+0.258880, -0.758848]) # blue ball
 
-def stop_robot():
+def stop_robot(time=0.2):
     global vel_msg
     vel_msg.linear.x = 0
     vel_msg.angular.z = 0
     velocity_pub.publish(vel_msg)
-    rospy.sleep(0.2)
+    rospy.sleep(time)
     
 def back_up(time=1):
     global vel_msg
@@ -55,10 +59,14 @@ def search_for_balls():
     global vel_msg
     vel_msg.linear.x = 0
     # rotate right 
-    vel_msg.angular.z = angular_velocity*0.3*-1
-    print(vel_msg.angular.z)
+    vel_msg.angular.z = angular_velocity*0.45*-1
     # Publish the velocity message
     velocity_pub.publish(vel_msg)
+
+# Initialize P controller
+global Kp, error_threshold
+Kp = 0.05
+error_threshold = 10
 
 def fixate_ball_in_frame(msg):
     global vel_msg
@@ -68,12 +76,12 @@ def fixate_ball_in_frame(msg):
     if msg.point.x != -1:
         if(abs(msg.point.x-CAM_MID_X) > 15):
             vel_msg.linear.x = 0
-            vel_msg.angular.z = math.tanh(abs(msg.point.x-CAM_MID_X)) * angular_velocity*0.3
+            vel_msg.angular.z = math.tanh(abs(msg.point.x-CAM_MID_X)) * angular_velocity*0.2
             if msg.point.x > CAM_MID_X: 
                 vel_msg.angular.z = vel_msg.angular.z*-1
-        elif(abs(msg.point.x-CAM_MID_X) > 7):
-            vel_msg.linear.x = linear_velocity*math.tanh(1/abs(msg.point.z*0.25))
-            vel_msg.angular.z = math.tanh(abs(msg.point.x-CAM_MID_X)) * angular_velocity*0.2
+        elif(abs(msg.point.x-CAM_MID_X) > 5):
+            vel_msg.linear.x = linear_velocity*math.tanh(1/abs(msg.point.z*0.3))
+            vel_msg.angular.z = math.tanh(abs(msg.point.x-CAM_MID_X)) * angular_velocity*0.05
             if msg.point.x > CAM_MID_X: 
                 vel_msg.angular.z = vel_msg.angular.z*-1      
         else:
@@ -125,18 +133,11 @@ def go_to_goal(goal_x=goal_x, goal_y=goal_y, pushing_ball = False):
 
     '''move the robot'''
     global vel_msg
-    # alter robot orientation to face the ball
-    while abs(angle(goal_x, goal_y)) >= 0.02*math.pi:
-        vel_msg.linear.x = 0
-        vel_msg.angular.z = angular(angular_velocity, goal_x, goal_y)
-        #print(vel_msg.angular.z)
-        # Publish the velocity message
-        velocity_pub.publish(vel_msg)
+    
+    orient_to_goal(goal_x, goal_y)
+    after_orient(goal_x, goal_y)
+    stop_robot()
 
-    vel_msg.linear.x = 0.03
-    vel_msg.angular.z = 0
-    velocity_pub.publish(vel_msg)
-    rospy.sleep(1)
     
     # move towards the goal
     while distance(goal_x=goal_x, goal_y=goal_y) >= 0.1:
@@ -144,51 +145,45 @@ def go_to_goal(goal_x=goal_x, goal_y=goal_y, pushing_ball = False):
         vel_msg.angular.z = angular(angular_velocity, goal_x, goal_y)
         # Publish the velocity message
         velocity_pub.publish(vel_msg)
-        print("MOVING NOW")
+        print("Moving with velocity: ", vel_msg.linear.x)
     
     stop_robot()
-    # Sleep for 0.1 seconds
     rospy.sleep(0.1)
-    
-    '''## push ball towards the line 
-    while abs(robot.x - MAX_X) >= 0.09:
-        vel_msg.linear.x = linear_velocity*0.8
-        vel_msg.angular.z = 0
-        # Publish the velocity message
-        velocity_pub.publish(vel_msg)
-        #print("MOVING NOW")
-    stop_robot()
-    # Back up a bit
-    back_up()'''
 
-def orient_to_line():
-    '''Orient the robot to the line'''
+def orient_to_goal(goal_x=goal_x, goal_y=goal_y):
+    '''Orient the robot to face the line'''
     global vel_msg
     # alter robot orientation to face the line
-    while abs(angle(goal_x = LINE_X+0.5, goal_y = robot.y)) >= 0.02*math.pi:
+    while abs(angle(goal_x, goal_y)) >= 0.02*math.pi:
         vel_msg.linear.x = 0
-        vel_msg.angular.z = angular(angular_velocity, goal_x = LINE_X+0.5, goal_y = robot.y)
+        vel_msg.angular.z = angular(angular_velocity, goal_x, goal_y)
         # Publish the velocity message
         velocity_pub.publish(vel_msg)
     stop_robot()
+
+def after_orient(goal_x=goal_x, goal_y=goal_y):
+        # give the robot a small velocity to start moving (prevents orientation error)
+        vel_msg.linear.x = 0.05*linear_velocity
+        vel_msg.angular.z = angular(angular_velocity, goal_x, goal_y)
+        velocity_pub.publish(vel_msg)
+        rospy.sleep(0.15)
 
 def push_ball():
     '''Push the ball towards the line'''
     global vel_msg
     # move towards the goal
-    while abs(robot.x - MAX_X) >= 0.09:
-        vel_msg.linear.x = linear_velocity*0.8
-        vel_msg.angular.z = 0
+    while abs(robot.x - MAX_X) >= 0.1:
+        vel_msg.linear.x = max(linear(linear_velocity, MAX_X, robot.y)*1.5, linear_velocity*0.8)
         # Publish the velocity message
-        velocity_pub.publish(vel_msg)
+        velocity_pub.publish(vel_msg)   
     stop_robot()
-    # Back up a bit
-    back_up()
 
 def circles_callback(msg):
-    global ROBOT_STATE, STOP_RADIUS
+    global ROBOT_STATE, STOP_RADIUS, LAST_RADIUS
+    LAST_RADIUS=msg.point.z
     if ROBOT_STATE=="Searching":
         if msg.point.x != -1:
+            print(msg.point.x)
             ROBOT_STATE = "Fixated"
             stop_robot()
         else:
@@ -205,7 +200,7 @@ def circles_callback(msg):
         #else:
             #ROBOT_STATE = "searching"
     elif ROBOT_STATE=="PickingBall":
-        ## pick_ball() (TODO)
+        pick_front_ball()
         res = True #validate you picked ball
         if res==True:
             back_up(0.5)
@@ -213,36 +208,43 @@ def circles_callback(msg):
             ROBOT_STATE = "GoingToSideWall"
     elif ROBOT_STATE=="GoingToSideWall":
         global goal_x, goal_y
-        goal_x=robot.x
+        goal_x=0
         if robot.y < 0:
             goal_y=-WALL_Y
         else:
             goal_y=WALL_Y
-        go_to_goal(goal_x, WALL_Y)
+        go_to_goal(goal_x, goal_y)
         ROBOT_STATE = "PlayingGolf"
     elif ROBOT_STATE=="PlayingGolf":
-        orient_to_line()
-        # open_gripper()
-        # go_up()
+        # Orient to line
+        orient_to_goal(LINE_X, robot.y)
+        after_orient(LINE_X, robot.y)
+        stop_robot()
+        ## Leave the ball
+        open_gripper()
+        go_up()
+        # Back and Push
         back_up(1)        
-        #push_ball()
+        push_ball()
+        back_up(2)
         ROBOT_STATE = "ReturningBack"
     else:
-        back_up()
-        #go_to_goal(0,0)
+        go_to_goal(0,0)
+        stop_robot()
+        rospy.sleep(0.5)
         ROBOT_STATE = "Searching"
     
     state_pub.publish(ROBOT_STATE)
     print(ROBOT_STATE)
-
+       
 
 # Initialize Node
-rospy.init_node('move_turtlebot3', anonymous=True)
+#rospy.init_node('move_turtlebot3', anonymous=True)
 # Initialize publishers and subscribers
 velocity_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 odom_sub = rospy.Subscriber('/odom', Odometry, odom_callback)
 scan_sub = rospy.Subscriber('/scan', LaserScan, scan_callback)
-circles_sub = rospy.Subscriber('/circles_coors', PointStamped, circles_callback)
+circles_sub = rospy.Subscriber('/circles_coors', PointStamped, circles_callback, queue_size=1)
 state_pub = rospy.Publisher('/robot_state', String, queue_size=10)
 
 if __name__=="__main__":
