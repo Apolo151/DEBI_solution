@@ -1,0 +1,13 @@
+<launch>
+
+<!-- Launch Simulation-->
+<include file="$(find turtlebot3_manipulation_gazebo)/launch/turtlebot3_manipulation_gazebo.launch"/>
+<!-- Launch MoveIt for arm control-->
+<include file="$(find turtlebot3_manipulation_moveit_config)/launch/move_group.launch"/>
+
+<!-- Launch Perception Node to detect circles-->
+<node name="circles_detector" pkg="perception" type="get_circles.py"/>
+<!-- Launch robot_control Node-->
+<node name="move_turtlebot" pkg="control" type="go_to_ball.py" output="screen"/>
+
+</launch>

@@ -27,7 +27,7 @@ class RobotControl:
             group_name: name of the group of joints to be controlled by moveit
         '''
         # initialize the node
-        rospy.init_node(node_name)
+        #rospy.init_node(node_name)
         # initialize moveit_commander and rospy node
         roscpp_initialize(sys.argv)
         
@@ -334,90 +334,7 @@ LEFT_FRONT = [0.100, -0.100, 0.030, 0.0, 1.57, 0.0]
 
 
 
-## Define control functions
-def open_gripper(speed=0.1,acceleration=0.1):
-    gripper_group.gripper_control([0.018,0.018],speed,acceleration) #open the gripper
 
-def closegripper(speed=0.1,acceleration=0.1):
-    gripper_group.gripper_control([-0.001,-0.001],speed,acceleration) #close the gripper
-
-# put arm in front of the robot
-def go_down(speed=0.1,acceleration=0.1):
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.118,0.000,0.025,0.0,1.57,0.0])
-    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
-    arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
-
-# put arm at the top of the robot
-def go_up(speed=0.1,acceleration=0.1):
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.000,0.000,0.3,0.0,0.0,0.0])
-    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
-    arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
-
-def go_left(speed=0.1,acceleration=0.1):
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[-0.08,0.19,0.025,0.0,1.57,1.57])
-    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
-    arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
-
-def play_front_golf():
-    # Go Down
-    go_down()
-    ## drop the ball
-    open_gripper(speed=0.1,acceleration=0.1)
-    ## back arm a bit
-    joint_pos=arm_group.get_joint_state()
-    arm_group.go_by_joint_angle([joint_pos[0], joint_pos[1],joint_pos[2],joint_pos[3]+math.radians(6)],1,1,angle_is_degree=False)
-    closegripper()
-    ## push ball with arm (TODO)
-    joint_pos=arm_group.get_joint_state()
-    arm_group.go_by_joint_angle([joint_pos[0], joint_pos[1],joint_pos[2],joint_pos[3]+math.radians(-75)],1,1,angle_is_degree=False)
-    '''
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.00,0.00,-0.020,0.0,1.57,1.57])
-    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
-    arm_group.go_to_pose_goal_cartesian(pose,1,1)
-    
-    joint_pos=arm_group.get_joint_state()
-    arm_group.go_by_joint_angle([joint_pos[0],joint_pos[1]+math.radians(-20),joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
-    joint_pos=arm_group.get_joint_state()
-    arm_group.go_by_joint_angle([joint_pos[0]+math.radians(30),joint_pos[1],joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
-    joint_pos=arm_group.get_joint_state()
-    arm_group.go_by_joint_angle([joint_pos[0],joint_pos[1]+math.radians(20),joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)
-    joint_pos=arm_group.get_joint_state()
-    closegripper(speed=1,acceleration=1)
-    arm_group.go_by_joint_angle([joint_pos[0]+math.radians(-30),joint_pos[1],joint_pos[2],joint_pos[3]],1,1,angle_is_degree=False)'''
-def ExtendArm():
-    arm_group.go_by_joint_angle([math.radians(0),math.radians(86),math.radians(-54),math.radians(-37)],0.1,0.1,angle_is_degree=False)
-
-def go_front_gripper():
-    arm_group.go_by_joint_angle([math.radians(0),math.radians(64),math.radians(-33),math.radians(8)],0.1,0.1,angle_is_degree=False)
-
-def go_back_gripper():
-    arm_group.go_by_joint_angle([math.radians(0),math.radians(64),math.radians(-33),math.radians(62)],0.08,0.08,angle_is_degree=False)
-
-def grip_while_down():
-    arm_group.go_by_joint_angle([math.radians(0),math.radians(43),math.radians(5),math.radians(40)],0.05,0.05,angle_is_degree=False)
-
-def go_stuck_to_front_gripper():
-    arm_group.go_by_joint_angle([math.radians(0),math.radians(64),math.radians(-33),math.radians(80)],0.08,0.08,angle_is_degree=False)
-def pick_front_ball():
-    open_gripper()
-    go_down()
-    ## go to the front of the ball
-    go_front_gripper()
-    closegripper()
-    ## push back to lock the ball between the arm and the robot's body (kama4a)
-    go_back_gripper()
-    # Open gripper and lock on ball
-    open_gripper()
-    grip_while_down()
-    closegripper()
-    #go_up()
-
-def is_ball_picked():
-    gripper_state=gripper_group.get_gripper_state()
-    if gripper_state[1] < 0.001:
-        return False
-    else:
-        return True
     
 
 #def arm_callback(msg):
@@ -439,7 +356,7 @@ def is_ball_picked():
 
 if __name__=="__main__":
     try: 
-        pick_front_ball()
+        #pick_front_ball()
         gripper_state = gripper_group.get_joint_state()
         for i in range(len(gripper_state)):
            print(gripper_state[i],end=" ")

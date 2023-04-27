@@ -23,6 +23,7 @@ def odom_callback(odom_msg):
     robot.x = position.x
     robot.y = position.y
     robot.theta = yaw
+    print(robot.theta)
 
 def scan_callback(scan_msg):
     # Find the minimum distance in the scan range
@@ -143,13 +144,13 @@ def go_to_goal(goal_x, goal_y, isball=False):
 
 if __name__ == '__main__':
     try:
-        for ball in balls_coors:
+        #for ball in balls_coors:
             # adjust in y-axis
-            go_to_goal(0, ball[1])
+            #go_to_goal(0, ball[1])
             # go to ball
-            go_to_goal(ball[0], ball[1], True)
-            rospy.sleep(0.2)
-        go_to_goal(0, 0) # go back to the starting point
+            #go_to_goal(ball[0], ball[1], True)
+            #rospy.sleep(0.2)
+        #go_to_goal(0, 0) # go back to the starting point
         rospy.spin()     
     except rospy.ROSInterruptException:
         pass

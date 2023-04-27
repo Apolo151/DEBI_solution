@@ -92,10 +92,10 @@ export TURTLEBOT3_MODEL=waffle_pi
 rosrun solution radius_to_distance.py
 ```
 
-#### Run Final Solution (In Progress)
+#### Run Final Solution
 
 ```bash
 source devel/setup.bash
 export TURTLEBOT3_MODEL=waffle_pi
-roslaunch solution final_solution.launch
+roslaunch control solution.launch
 ```
