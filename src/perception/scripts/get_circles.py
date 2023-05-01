@@ -6,22 +6,45 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import PointStamped
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
+import time
 
 global circles, circle_msg
 circles = None
 circle_msg = PointStamped()
 
+global IMG_DIMENSIONS
+IMG_DIMENSIONS = (640, 480)
+
 BALL_RADIUS = 5.5*(10**(-2))*0.5 # meter
 FOCAL_LENGTH = 0.00304 # meter
 SENSOR_WIDTH = 2.813*(10**(-3)) # meter
 
+global cropped_time, normal_time
+cropped_time = np.array([], dtype=np.float64)
+normal_time = np.array([], dtype=np.float64)
+
+
+def crop_img(img, width_cut=180, height_cut=230):
+    '''This function crops the image to Select an ROI
+    Original image dimensions: 640x480
+    Args:
+        img: image to crop
+        width: number to pixels to cut from the right and left
+        height: number of pixels to cut from the top
+    '''
+    # Crop image
+    img = img[height_cut:IMG_DIMENSIONS[1], width_cut:(IMG_DIMENSIONS[0]-width_cut)]
+    return img
+
 # Define a callback function to convert the ROS message to an image and display it
 def image_callback(ros_image):
     #black_bg = np.zeros((480,640,1), np.uint8)
-    global circle_msg, circles
+    global circle_msg, circles, cropped_time, normal_time
     try:
         # Convert the ROS message to an image
         main_img = CvBridge().imgmsg_to_cv2(ros_image, "bgr8")
+        #cropped = crop_img(main_img)
+        main_img = crop_img(main_img)
         ## Blur img
         main_img=cv2.medianBlur(main_img, 5)
         #main_img= cv2.GaussianBlur(main_img,(5,5),0)
@@ -53,7 +76,7 @@ def image_callback(ros_image):
         #res = cv2.bitwise_and(res, edges)
         res_f = cv2.cvtColor(res_f, cv2.COLOR_BGR2GRAY)'''
 
-        edges = cv2.Canny(hsv_gray, 0, 180, apertureSize=3)
+        #edges = cv2.Canny(hsv_gray, 0, 180, apertureSize=3)
         
         #contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         #cnt = sorted(cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[-2], key=cv2.contourArea)[-1]
@@ -68,8 +91,13 @@ def image_callback(ros_image):
         #edges = cv2.dilate(edges, None, iterations=1)
         #edges = cv2.erode(edges, None, iterations=1)
 
-        # Perform Hough Circle Transform
+        # Perform Hough Circle Transform (with measuring time)
+        #start_hough = time.time()
+
         circles=cv2.HoughCircles(hsv_gray,cv2.HOUGH_GRADIENT,1,400,param1=45,param2=19,minRadius=5,maxRadius=80)
+        #end_hough = time.time()
+        #print("Hough time: ", end_hough-start_hough)
+        #cropped_time = np.append(cropped_time, end_hough-start_hough)
 
         # Define circles msg
         circle_msg.header = ros_image.header
@@ -94,6 +122,7 @@ def image_callback(ros_image):
         #print(circle_msg.point.z)
         # Display Images
         cv2.imshow("Main Image", main_img)
+        #cv2.imshow("Cropped", cropped)
         #cv2.imshow("Canny", edges)
         #cv2.imshow("HSV gray", hsv_gray)
         cv2.waitKey(3)
@@ -108,3 +137,6 @@ sub = rospy.Subscriber("/camera/rgb/image_raw", Image, image_callback)
 if __name__=="__main__":
     # Keep the ros node running
     rospy.spin()
+
+    #np.savetxt("cropped_time.csv", cropped_time, delimiter=",")
+    
