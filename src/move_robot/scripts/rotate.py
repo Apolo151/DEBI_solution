@@ -23,7 +23,7 @@ def scan_callback(scan_msg):
     min_scan_distance = min(scan_msg.ranges[:len(scan_msg.ranges)//3])
 
 # Initialize ROS node
-rospy.init_node('move_turtlebot3', anonymous=True)
+rospy.init_node('rotation', anonymous=True)
 
 # Initialize publishers and subscribers
 velocity_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
