@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-import sys
-# Import the necessary libraries
+
 import rospy
 import cv2
 from sensor_msgs.msg import Image
@@ -9,107 +8,135 @@ from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
 import time
 
-global circles
+global circles, circle_msg
 circles = None
+circle_msg = PointStamped()
+
+global IMG_DIMENSIONS
+IMG_DIMENSIONS = (640, 480)
+
 BALL_RADIUS = 5.5*(10**(-2))*0.5 # meter
 FOCAL_LENGTH = 0.00304 # meter
 SENSOR_WIDTH = 2.813*(10**(-3)) # meter
 
-true_dis = ((0.968200+0.258880)**2+(0.146911)**2)**0.5
+global cropped_time, normal_time
+cropped_time = np.array([], dtype=np.float64)
+normal_time = np.array([], dtype=np.float64)
 
-rob_dis = 187.5*(10**(-3)) # distance between robot center and pi camera module
 
+def crop_img(img, width_cut=180, height_cut=230):
+    '''This function crops the image to Select an ROI
+    Original image dimensions: 640x480
+    Args:
+        img: image to crop
+        width: number to pixels to cut from the right and left
+        height: number of pixels to cut from the top
+    '''
+    # Crop image
+    img = img[height_cut:IMG_DIMENSIONS[1], width_cut:(IMG_DIMENSIONS[0]-width_cut)]
+    return img
 
 # Define a callback function to convert the ROS message to an image and display it
-def image_callback(ros_image): 
+def image_callback(ros_image):
+    #black_bg = np.zeros((480,640,1), np.uint8)
+    global circle_msg, circles, cropped_time, normal_time
     try:
         # Convert the ROS message to an image
         main_img = CvBridge().imgmsg_to_cv2(ros_image, "bgr8")
+        #cropped = crop_img(main_img)
+        main_img = crop_img(main_img)
         ## Blur img
-        main_img=cv2.medianBlur(main_img, 3)
-        #main_img= cv2.GaussianBlur(main_img,(3,3),0)
-        # Convert to grayscale
-        gray=cv2.cvtColor(main_img,cv2.COLOR_BGR2GRAY)
+        main_img=cv2.medianBlur(main_img, 5)
+        #main_img= cv2.GaussianBlur(main_img,(5,5),0)
+
         # Convert to HSV and get gray hsv
         hsv = cv2.cvtColor(main_img, cv2.COLOR_BGR2HSV)
         hsv_gray = cv2.cvtColor(hsv, cv2.COLOR_BGR2GRAY)
-        #lower = np.array([0, 0, 0])
-        #upper = np.array([255, 60, 255])
-        #mask = cv2.inRange(hsv, lower, upper)
-        #res = cv2.bitwise_and(main_img, main_img, mask=mask)
+
+        ''' Filter background color
+        walls_lower = np.array([5, 60, 61])
+        walls_upper = np.array([20, 210, 96])
+        side_walls_lower = np.array([3, 0, 0])
+        side_walls_upper = np.array([19, 60, 255])
+        ground_lower = np.array([0, 0, 10])
+        ground_upper = np.array([0, 0, 200])
+        walls_mask = cv2.inRange(hsv, walls_lower, walls_upper)
+        ground_mask = cv2.inRange(hsv, ground_lower, ground_upper)
+        side_walls_mask = cv2.inRange(hsv, side_walls_lower, side_walls_upper)
+        res = cv2.bitwise_and(hsv, hsv, mask=walls_mask)
+        res = cv2.bitwise_not(res)
+        res2 = cv2.bitwise_and(hsv, hsv, mask=ground_mask)
+        res2 = cv2.bitwise_not(res2)
+        res3 = cv2.bitwise_and(hsv, hsv, mask=side_walls_mask)
+        res3 = cv2.bitwise_not(res3)
+        res_f = cv2.bitwise_and(res, res2)
+        res_f = cv2.bitwise_and(res_f, res3)
+        #res = cv2.bitwise_and(res, res, mask=white_mask)
         #res = cv2.bitwise_not(res)
         #res = cv2.bitwise_and(res, edges)
+        res_f = cv2.cvtColor(res_f, cv2.COLOR_BGR2GRAY)'''
 
-        # Perform histogram equalization using cv2.equalizeHist()
-        eq_img = cv2.equalizeHist(gray)
-
-        # Perform Hough Circle Transform
-        global circles
-        circles=cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT,0.5,30,param1=50,param2=20,minRadius=0,maxRadius=0)
-    
-        # Detect edges using Canny
-        edges = cv2.Canny(hsv_gray, 0, 180, apertureSize=3)
+        #edges = cv2.Canny(hsv_gray, 0, 180, apertureSize=3)
         
+        #contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        #cnt = sorted(cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[-2], key=cv2.contourArea)[-1]
+        # Draw Contours on Black Background
+        #cv2.drawContours(black_bg, [cnt], -1, (255,255,255), -1)
+        #result_img = cv2.bitwise_and(main_img, main_img, mask=black_bg)
+        #result_img = cv2.cvtColor(result_img, cv2.COLOR_BGR2GRAY)
+        #black_bg = cv2.cvtColor(black_bg, cv2.COLOR_BGR2GRAY)
+        #edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+        #edges2 = cv2.dilate(edges, None, iterations=2)
+        #edges = edges2-edges
+        #edges = cv2.dilate(edges, None, iterations=1)
+        #edges = cv2.erode(edges, None, iterations=1)
+
+        # Perform Hough Circle Transform (with measuring time)
+        #start_hough = time.time()
+
+        circles=cv2.HoughCircles(hsv_gray,cv2.HOUGH_GRADIENT,1,400,param1=45,param2=19,minRadius=5,maxRadius=80)
+        #end_hough = time.time()
+        #print("Hough time: ", end_hough-start_hough)
+        #cropped_time = np.append(cropped_time, end_hough-start_hough)
+
         # Define circles msg
-        circle_msg = PointStamped()
         circle_msg.header = ros_image.header
         circle_msg.point.x = -1
         circle_msg.point.y = -1
         circle_msg.point.z = -1 # Radius
         # Loop over the detected circles and draw them on the original image
         if circles is not None:
-            # set msg parameters
+            # set msg parameters to first circle in list
+            # maybe sort circles and get (bigger radius - closest to center - most consistent) (TODO)
             circle_msg.point.x = circles[0][0][0]
             circle_msg.point.y = circles[0][0][1]
             circle_msg.point.z = circles[0][0][2] # Radius
             ## Draw circles
             circles=np.uint16(np.around(circles))
             for i in circles[0,:]:
-                cv2.circle(main_img,(i[0],i[1]),i[2],(0,255,0),2)
-                cv2.circle(main_img,(i[0],i[1]),2,(0,0,255),3)
-
-        # Apply HoughLines function to detect lines
-        #lines = cv2.HoughLines(edges, 1, np.pi/180, 200)
-        # Loop over the detected lines and draw them on the original image
-        '''for line in lines:
-            rho, theta = line[0]
-            a = np.cos(theta)
-            b = np.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            x1 = int(x0 + 1000 * (-b))
-            y1 = int(y0 + 1000 * (a))
-            x2 = int(x0 - 1000 * (-b))
-            y2 = int(y0 - 1000 * (a))
-            cv2.line(main_img, (x1, y1), (x2, y2), (0, 0, 255), 2)'''
+                cv2.circle(main_img,(i[0],i[1]),i[2],(0,255,200),1)
+                cv2.circle(main_img,(i[0],i[1]),2,(0,0,255),1)
         
         # Publish circles coordinates and radius
         pub.publish(circle_msg)
-        ##
-        if circle_msg.point.z == -1:
-            print("No circles detected")
-        else:
-            # Calculate distance between robot and ball in Camera pixels
-            dis = ((circle_msg.point.x)**2+(circle_msg.point.y)**2)**0.5
-            # Calculate pixel to meter ratio and use it calculate distance IRL
-            distance_m = dis * BALL_RADIUS / circle_msg.point.z
-            #distance_m = FOCAL_LENGTH * SENSOR_WIDTH / radius_m
-            print("calc_dis: {}, true_dis: {}".format(distance_m+rob_dis, true_dis))
-
+        #print(circle_msg.point.z)
         # Display Images
         cv2.imshow("Main Image", main_img)
-        #cv2.imshow("Camera Stream", edges)
-        #cv2.imshow("hist equal", eq_img)
+        #cv2.imshow("Cropped", cropped)
+        #cv2.imshow("Canny", edges)
+        #cv2.imshow("HSV gray", hsv_gray)
         cv2.waitKey(3)
     except Exception as e:
         print(e)
     
 # Define Subs and Pubs
-rospy.init_node("ip_camera_subscriber", anonymous=True)
-pub = rospy.Publisher("circles_coors", PointStamped, queue_size=10)
+rospy.init_node("circles_detector", anonymous=True)
+pub = rospy.Publisher("circles_coors", PointStamped, queue_size=1)
 sub = rospy.Subscriber("/camera/rgb/image_raw", Image, image_callback)
 
 if __name__=="__main__":
-
     # Keep the ros node running
     rospy.spin()
+
+    #np.savetxt("cropped_time.csv", cropped_time, delimiter=",")
+    

@@ -3,7 +3,7 @@
 import sys
 import copy
 import rospy
-from std_msgs.msg import Bool
+from std_msgs.msg import String
 import geometry_msgs.msg
 from moveit_commander import *
 import tf.transformations
@@ -22,7 +22,7 @@ class RobotControl:
             group_name: name of the group of joints to be controlled by moveit
         '''
         # initialize the node
-        rospy.init_node(node_name)
+        #rospy.init_node(node_name)
         # initialize moveit_commander and rospy node
         roscpp_initialize(sys.argv)
         
@@ -314,43 +314,25 @@ arm_group=RobotControl(group_name="arm",planner_id="PRM",planning_time=10.0)
 gripper_group=RobotControl(group_name="gripper")
 TransformationCalculator=frames_transformations()
 
-## Define control functions
-def open_gripper(speed=0.1,acceleration=0.1):
-    gripper_group.gripper_control([0.019,0.019],speed,acceleration) #open the gripper
+## Define arm actions callback
 
-def closegripper(speed=0.1,acceleration=0.1):
-    gripper_group.gripper_control([0.000,0.000],speed,acceleration) #close the gripper
-
-# put arm in front of the robot
-def go_down(speed=0.1,acceleration=0.1):
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.118,0.000,0.025,0.0,1.57,0.0])
-    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
-    arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
-
-# put arm at the top of the robot
-def go_up(speed=0.1,acceleration=0.1):
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[0.118,0.000,0.2,0.0,0.0,0.0])
-    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
-    arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
-
-def go_left(speed=0.1,acceleration=0.1):
-    TransformationCalculator.put_frame_static_frame(parent_frame_name="base_footprint",child_frame_name="ball_pos",frame_coordinate=[-0.08,0.19,0.025,0.0,1.57,1.57])
-    pose=TransformationCalculator.transform(parent_id="base_footprint",child_frame_id="ball_pos")
-    arm_group.go_to_pose_goal_cartesian(pose,speed,acceleration)
+## Define frames for actions
+DOWN_FRONT = [0.118,0.000,0.025,0.0,1.57,0.0]
+UP_ORIGIN = [0.000,0.000,0.30,0.0,0.0,0.0]
+UP_FRONT = [0.118,0.000,0.030,0.0,1.57,0.0]
+RIGHT_FRONT = [0.100, 0.100, 0.030, 0.0, 1.57, 0.0]
+LEFT_FRONT = [0.100, -0.100, 0.030, 0.0, 1.57, 0.0]
 
 
 
-if __name__=="__main__":
-    try:
-        # pick the ball from in front of the robot
-        open_gripper()
-        go_down()
-        closegripper()
-        go_up()
-        ##--Rotate the robot--## (TODO)
-        # Put the ball and shoot
-        go_left()
-        open_gripper()
-        ##--Shoot ball with arm--## (TODO)
-    except exception as e:
-        print(e)
+
+'''if __name__=="__main__":
+    try: 
+        #pick_front_ball()
+        gripper_state = gripper_group.get_joint_state()
+        for i in range(len(gripper_state)):
+           print(gripper_state[i],end=" ")
+        #go_down()
+        #play_front_golf() 
+    except Exception as e:
+        print(e)'''
