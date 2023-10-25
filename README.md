@@ -1,12 +1,12 @@
-##### This repo contains our team's solution for the DEBI roboitcs challenge
+##### This repo contains our team's solution for the DEBI robotics challenge
 [Competition Guide](https://drive.google.com/file/d/1BXq8UASasAKcVyFiAwk3sP4nw0m5puhp/view)
 
 [Data for ML approaches](https://drive.google.com/drive/u/3/folders/10ELHnNTLzk8KlJmtVNdc6GsWTaqzyflx)
 
-## How to run simulator 
+## How to run the simulator 
 **Install Dependencies**
 
-> make sure you installed ROS noetic or install it following the steps here: [ROS wiki](http://wiki.ros.org/noetic/Installation/Ubuntu)
+> Make sure you installed ROS noetic or install it following the steps here: [ROS wiki](http://wiki.ros.org/noetic/Installation/Ubuntu)
 
 ```bash
 rosdep install --from-paths src --ignore-src -r -y
@@ -19,7 +19,7 @@ catkin_make
 ```
 **Run the simulator**  
 ⚠️ **It's easier to put** ```export TURTLEBOT3_MODEL=waffle_pi``` **in the .bashrc**  
-**Treminal 1**
+**Terminal 1**
 ```bash
 source devel/setup.bash
 export TURTLEBOT3_MODEL=waffle_pi
@@ -81,7 +81,7 @@ source devel/setup.bash
 export TURTLEBOT3_MODEL=waffle_pi
 roslaunch solution gather_distance_radius_data.launch
 ```
-- Set blue ball coordinates from simulator to (x=2.5, y=0.0)
+- Set the blue ball coordinates from the simulator to (x=2.5, y=0.0)
 - Start the simulator
 
 
@@ -92,7 +92,7 @@ export TURTLEBOT3_MODEL=waffle_pi
 rosrun solution radius_to_distance.py
 ```
 
-#### Run Final Solution
+#### Run The Final Solution
 
 ```bash
 source devel/setup.bash
